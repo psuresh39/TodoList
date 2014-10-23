@@ -13,12 +13,14 @@ $(document).ready(function(){
     var todoitem = new TodoItem();
 
     var TodoView = Backbone.View.extend({
-
+        el: $('body'),
         initialize: function(){
             this.model.on('change', this.render, this);
         },
 
-        template: _.template('<h3 class="<%= status %>">' + '<% if(status === "complete") print("checked") %>/>' + ' <%= description %></h3>'),
+        template: _.template('<h3 class="<%= status %>"><input type=checkbox ' + '<% if(status === "complete") print("checked") %>/>' + ' <%= description %></h3>'),
+
+
 
         render: function(){
             console.log(this.model.toJSON());
@@ -32,7 +34,6 @@ $(document).ready(function(){
 
         toggleStatus: function(){
             this.model.toggleStatus();
-            this.$el.render();
         },
     });
 
