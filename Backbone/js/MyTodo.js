@@ -22,7 +22,7 @@ var TodoItemCollection = Backbone.Collection.extend({
 });
 
 var TodoViewCollection = Backbone.View.extend({
-    el: $('body'),
+    el: $('#app'),
     initialize: function() {
         this.collection.on('add', this.addOne, this);
         this.collection.on('reset', this.render, this);
@@ -30,10 +30,11 @@ var TodoViewCollection = Backbone.View.extend({
     addOne: function(todoitem){
         var todoview = new TodoView({model: todoitem});
         this.$el.append(todoview.render());
+        console.log(this.el);
     },
 
     render: function(){
-        console.log("inside collection view")
+        console.log("inside collection view");
         this.collection.forEach(this.addOne, this)
     }
 });
@@ -45,7 +46,7 @@ var TodoView = Backbone.View.extend({
         this.model.on('destroy', this.remove, this);
     },
 
-    template: _.template('<h3 class="<%= status %>"><input type=checkbox ' + '<% if(status === "complete") print("checked") %>/>' + ' <%= description %></h3>'),
+    template: _.template('<h3 class="<%= status %>"><input type=checkbox ' + '<% if(status === "complete") print("checked") %>/>' + ' <%= description %></h3>&nbsp&nbsp&nbsp<a href="#todo/<%= id %>" >more</a> '),
 
 
 
@@ -58,7 +59,15 @@ var TodoView = Backbone.View.extend({
     },
 
     events:{
-        'click h3': 'toggleStatus'
+        'click h3': 'toggleStatus',
+        'click .todo': 'showMore'
+    },
+
+    showMore: function(model){
+        model.preventDefault();
+        console.log(model);
+        console.log("show more on this item")
+
     },
 
     remove:function(){
@@ -70,15 +79,33 @@ var TodoView = Backbone.View.extend({
     }
 });
 
-var todoitemcollection = new TodoItemCollection({});
-var todoviewcollection = new TodoViewCollection({collection: todoitemcollection});
-todoviewcollection.render();
-console.log(todoviewcollection.el);
 
+var TodoApp = new (Backbone.Router.extend({
+    routes: {"": 'index', "todo/:id": 'showItem'},
+    initialize: function(){
+        this.todoitemcollection = new TodoItemCollection({});
+        this.todoviewcollection = new TodoViewCollection({collection: this.todoitemcollection});
+        this.test = [
+            {description:"clean bedroom", status:"incomplete", id:1},
+            {description:"reply to sis", status:"incomplete", id:2}
+        ];
+        this.todoitemcollection.reset(this.test);
+    },
+    start: function(){
+        Backbone.history.start({pushState:true});
+    },
+    index: function(){
+        console.log("In index;")
+        this.todoitemcollection.reset(this.test);
+    },
+    showItem: function(id){
+        console.log("In showItem");
+        var model = this.todoitemcollection.get(id);
+        var todoview = new TodoView({model: model});
+        this.todoviewcollection.$el.html(todoview.render());
+    }
+}));
 
-var test = [
-    {description:"clean bedroom", status:"incomplete"},
-    {description:"reply to sis", status:"incomplete"},
-    {description:"gym signup", status:"incomplete"}
-]
-todoitemcollection.reset(test);
+$(function(){
+    TodoApp.start();
+});
