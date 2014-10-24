@@ -46,7 +46,7 @@ var TodoView = Backbone.View.extend({
         this.model.on('destroy', this.remove, this);
     },
 
-    template: _.template('<h3 class="<%= status %>"><input type=checkbox ' + '<% if(status === "complete") print("checked") %>/>' + ' <%= description %></h3>&nbsp&nbsp&nbsp<a href="#todo/<%= id %>" >more</a> '),
+    template: _.template('<h3 class="<%= status %>"><input type=checkbox ' + '<% if(status === "complete") print("checked") %>/>' + ' <%= description %></h3>&nbsp&nbsp&nbsp<a href="/todos/<%= id %>" >more</a> '),
 
 
 
@@ -81,7 +81,7 @@ var TodoView = Backbone.View.extend({
 
 
 var TodoApp = new (Backbone.Router.extend({
-    routes: {"": 'index', "todo/:id": 'showItem'},
+    routes: {"":"index", "todos/:id": "showItem"},
     initialize: function(){
         this.todoitemcollection = new TodoItemCollection({});
         this.todoviewcollection = new TodoViewCollection({collection: this.todoitemcollection});
