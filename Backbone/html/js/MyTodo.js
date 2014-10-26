@@ -1,5 +1,10 @@
+MyTodoApp = {
+    models: {},
+    views: {},
+    collections: {}
+}
 
-var TodoItem = Backbone.Model.extend({
+MyTodoApp.models.TodoItem = Backbone.Model.extend({
     defaults: {status: 'incomplete', description: 'Empty task'},
     toggleStatus: function(){
         if (this.get('status') === 'incomplete'){
@@ -11,7 +16,7 @@ var TodoItem = Backbone.Model.extend({
     }
 });
 
-var TodoItemCollection = Backbone.Collection.extend({
+MyTodoApp.collections.TodoItemCollection = Backbone.Collection.extend({
     model:TodoItem,
     initialize: function(){
         this.on('remove', this.hide);
@@ -21,7 +26,7 @@ var TodoItemCollection = Backbone.Collection.extend({
     }
 });
 
-var TodoViewCollection = Backbone.View.extend({
+MyTodoApp.views.TodoViewCollection = Backbone.View.extend({
     el: $('#app'),
     initialize: function() {
         this.collection.on('add', this.addOne, this);
@@ -39,7 +44,7 @@ var TodoViewCollection = Backbone.View.extend({
     }
 });
 
-var TodoView = Backbone.View.extend({
+MyTodoApp.views.TodoView = Backbone.View.extend({
     tagName: "li",
     initialize: function(){
         this.model.on('change', this.render, this);
@@ -80,11 +85,11 @@ var TodoView = Backbone.View.extend({
 });
 
 
-var TodoApp = new (Backbone.Router.extend({
+MyTodoApp.TodoRouter = new (Backbone.Router.extend({
     routes: {"":"index", "todos/:id": "showItem"},
     initialize: function(){
-        this.todoitemcollection = new TodoItemCollection({});
-        this.todoviewcollection = new TodoViewCollection({collection: this.todoitemcollection});
+        this.todoitemcollection = new MyTodoApp.collections.TodoItemCollection({});
+        this.todoviewcollection = new MyTodoApp.views.TodoViewCollection({collection: this.todoitemcollection});
         this.test = [
             {description:"clean bedroom", status:"incomplete", id:1},
             {description:"reply to sis", status:"incomplete", id:2}
@@ -107,5 +112,5 @@ var TodoApp = new (Backbone.Router.extend({
 }));
 
 $(function(){
-    TodoApp.start();
+    MyTodoApp.TodoRouter.start();
 });
