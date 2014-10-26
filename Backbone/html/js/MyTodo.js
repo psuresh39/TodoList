@@ -113,7 +113,7 @@ MyTodoApp.TodoRouter = new (Backbone.Router.extend({
 
     index: function(){
         console.log("[Router] Index")
-        MyTodoApp.views.MainView.todoitemcollection.fetch();
+        MyTodoApp.views.MainView.todoviewcollection.render();
     },
     showItem: function(id){
         console.log("[Router] show one item");
