@@ -19,7 +19,7 @@ MyTodoApp.models.TodoItem = Backbone.Model.extend({
 
 MyTodoApp.collections.TodoItemCollection = Backbone.Collection.extend({
     model:MyTodoApp.models.TodoItem,
-    localStorage: new Backbone.LocalStorage("TodosList"),
+    localStorage: new Backbone.LocalStorage("TodosList-test2"),
     initialize: function(){
         console.log("[Collection] initialize")
         this.on('remove', this.hide);
@@ -39,7 +39,7 @@ MyTodoApp.views.TodoViewCollection = Backbone.View.extend({
 
     initialize: function() {
         console.log("[ViewColl] initialize", this.el);
-        this.collection.on('add', this.addOne, this);
+        //this.collection.on('add', this.addOne, this);
         this.collection.on('reset', this.addAll, this);
     },
     addOne: function(todoitem){
@@ -58,6 +58,7 @@ MyTodoApp.views.TodoViewCollection = Backbone.View.extend({
     },
 
     render: function(){
+        this.$el.empty();
         this.addAll();
         return this.el;
     }
@@ -119,13 +120,13 @@ MyTodoApp.views.NewTodoForm = Backbone.View.extend({
         submit: 'save'
     },
 
-    save: function(){
+    save: function(e){
         e.preventDefault();
         console.log("[Save] saving model and trigger todos.html")
         var desc = this.$('input[name=description]').val();
         var todoitem = new MyTodoApp.models.TodoItem({description:desc, status:"incomplete"})
         MyTodoApp.views.MainView.todoitemcollection.add(todoitem);
-        MyTodoApp.Router.navigate("todos.html", {trigger: true});
+        MyTodoApp.TodoRouter.navigate("todos.html", {trigger: true});
     }
 });
 
@@ -150,7 +151,8 @@ MyTodoApp.TodoRouter = new (Backbone.Router.extend({
     addTodoItem: function(){
         //render new empty form
         console.log("[addTodoItem] Inside route Handler")
-        var newForm = new MyTodoApp.views.NewTodoForm({model: {description: "What do you have in mind ?"}});
+        var todoitem = new MyTodoApp.models.TodoItem({description: "What do you have in mind ?"})
+        var newForm = new MyTodoApp.views.NewTodoForm({model: todoitem});
         MyTodoApp.views.MainView.mainContainer.$el.html(newForm.render());
     }
 }));
