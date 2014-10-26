@@ -2,7 +2,7 @@ MyTodoApp = {
     models: {},
     views: {},
     collections: {}
-}
+};
 
 MyTodoApp.models.TodoItem = Backbone.Model.extend({
     defaults: {status: 'incomplete', description: 'Empty task'},
@@ -51,7 +51,7 @@ MyTodoApp.views.TodoView = Backbone.View.extend({
         this.model.on('destroy', this.remove, this);
     },
 
-    template: _.template('<h3 class="<%= status %>"><input type=checkbox ' + '<% if(status === "complete") print("checked") %>/>' + ' <%= description %></h3><a id="todos/<%= id %>" class="todo" >more</a> '),
+    template: _.template('<h3 class="<%= status %>"><input type=checkbox ' + '<% if(status === "complete") print("checked") %>/>' + ' <%= description %></h3><a href="todos/<%= id %>" id="todos/<%= id %>" class="todo" >more</a> '),
 
 
 
@@ -87,6 +87,30 @@ MyTodoApp.views.TodoView = Backbone.View.extend({
 
 MyTodoApp.TodoRouter = new (Backbone.Router.extend({
     routes: {"":"index", "todos/:id": "showItem"},
+
+    index: function(){
+        console.log("In index;")
+        MyTodoApp.views.MainView.todoitemcollection.reset(MyTodoApp.views.MainView.test);
+    },
+    showItem: function(id){
+        console.log("In showItem");
+        var model = MyTodoApp.views.MainView.todoitemcollection.get(id);
+        var todoview = new MyTodoApp.views.TodoView({model: model});
+        MyTodoApp.views.MainView.todoviewcollection.$el.html(todoview.render());
+    }
+}));
+
+MyTodoApp.views.MainView = new (Backbone.View.extend({
+    el: document.body,
+
+    template: _.template('<h4> My Todo List </h4><div id="app"></div>'),
+
+    render: function(){
+        console.log("inside MAIN view");
+        this.$el.html(this.template());
+        console.log(this.el);
+    },
+
     initialize: function(){
         this.todoitemcollection = new MyTodoApp.collections.TodoItemCollection({});
         this.todoviewcollection = new MyTodoApp.views.TodoViewCollection({collection: this.todoitemcollection});
@@ -94,23 +118,13 @@ MyTodoApp.TodoRouter = new (Backbone.Router.extend({
             {description:"clean bedroom", status:"incomplete", id:1},
             {description:"reply to sis", status:"incomplete", id:2}
         ];
-        this.todoitemcollection.reset(this.test);
     },
     start: function(){
         Backbone.history.start({pushState:true});
-    },
-    index: function(){
-        console.log("In index;")
-        this.todoitemcollection.reset(this.test);
-    },
-    showItem: function(id){
-        console.log("In showItem");
-        var model = this.todoitemcollection.get(id);
-        var todoview = new MyTodoApp.views.TodoView({model: model});
-        this.todoviewcollection.$el.html(todoview.render());
     }
 }));
 
 $(function(){
-    MyTodoApp.TodoRouter.start();
+    MyTodoApp.views.MainView.render();
+    MyTodoApp.views.MainView.start();
 });
