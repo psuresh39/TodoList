@@ -17,7 +17,7 @@ MyTodoApp.models.TodoItem = Backbone.Model.extend({
 });
 
 MyTodoApp.collections.TodoItemCollection = Backbone.Collection.extend({
-    model:TodoItem,
+    model:MyTodoApp.models.TodoItem,
     initialize: function(){
         this.on('remove', this.hide);
     },
@@ -33,7 +33,7 @@ MyTodoApp.views.TodoViewCollection = Backbone.View.extend({
         this.collection.on('reset', this.render, this);
     },
     addOne: function(todoitem){
-        var todoview = new TodoView({model: todoitem});
+        var todoview = new MyTodoApp.views.TodoView({model: todoitem});
         this.$el.append(todoview.render());
         console.log(this.el);
     },
@@ -51,7 +51,7 @@ MyTodoApp.views.TodoView = Backbone.View.extend({
         this.model.on('destroy', this.remove, this);
     },
 
-    template: _.template('<h3 class="<%= status %>"><input type=checkbox ' + '<% if(status === "complete") print("checked") %>/>' + ' <%= description %></h3>&nbsp&nbsp&nbsp<a href="/todos/<%= id %>" >more</a> '),
+    template: _.template('<h3 class="<%= status %>"><input type=checkbox ' + '<% if(status === "complete") print("checked") %>/>' + ' <%= description %></h3><a id="todos/<%= id %>" class="todo" >more</a> '),
 
 
 
@@ -68,11 +68,11 @@ MyTodoApp.views.TodoView = Backbone.View.extend({
         'click .todo': 'showMore'
     },
 
-    showMore: function(model){
-        model.preventDefault();
-        console.log(model);
+    showMore: function(event){
+        event.preventDefault();
+        console.log(event);
         console.log("show more on this item")
-
+        MyTodoApp.TodoRouter.navigate(event.target.id, {trigger: true})
     },
 
     remove:function(){
@@ -106,7 +106,7 @@ MyTodoApp.TodoRouter = new (Backbone.Router.extend({
     showItem: function(id){
         console.log("In showItem");
         var model = this.todoitemcollection.get(id);
-        var todoview = new TodoView({model: model});
+        var todoview = new MyTodoApp.views.TodoView({model: model});
         this.todoviewcollection.$el.html(todoview.render());
     }
 }));
