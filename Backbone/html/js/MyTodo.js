@@ -109,7 +109,7 @@ MyTodoApp.views.TodoView = Backbone.View.extend({
 
 
 MyTodoApp.TodoRouter = new (Backbone.Router.extend({
-    routes: {"":"index", "todos/:id": "showItem"},
+    routes: {"todos.html":"index", "todos/:id": "showItem"},
 
     index: function(){
         console.log("[Router] Index")
