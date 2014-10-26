@@ -144,7 +144,6 @@ MyTodoApp.views.MainView = new (Backbone.View.extend({
         this.todoviewcollection = new MyTodoApp.views.TodoViewCollection({collection: this.todoitemcollection});
         this.$el.append(this.todoviewcollection.render());
         console.log("[Main View] At start attached html is :", this.todoviewcollection.el);
-        this.todoitemcollection.fetch();
         Backbone.history.start({pushState:true});
     }
 }));
