@@ -30,14 +30,12 @@ MyTodoApp.collections.TodoItemCollection = Backbone.Collection.extend({
         model.destroy();
     },
     saveList: function(model){
-        console.log("[Collection] deleting model")
+        console.log("[Collection] Adding model")
         model.save();
     }
 });
 
 MyTodoApp.views.TodoViewCollection = Backbone.View.extend({
-    tagName: "div",
-    id: "app",
 
     initialize: function() {
         console.log("[ViewColl] initialize", this.el);
@@ -107,32 +105,84 @@ MyTodoApp.views.TodoView = Backbone.View.extend({
     }
 });
 
+MyTodoApp.views.NewTodoForm = Backbone.View.extend({
+
+    template: _.template('<form>' + '<input name=description value="<%= description %>" />' + '<button>Save</button></form>'),
+
+    render: function(){
+        console.log("[FormView] Rendering form");
+        this.$el.html(this.template(this.model.attributes));
+        return this.el;
+    },
+
+    events: {
+        submit: 'save'
+    },
+
+    save: function(){
+        e.preventDefault();
+        console.log("[Save] saving model and trigger todos.html")
+        var desc = this.$('input[name=description]').val();
+        var todoitem = new MyTodoApp.models.TodoItem({description:desc, status:"incomplete"})
+        MyTodoApp.views.MainView.todoitemcollection.add(todoitem);
+        MyTodoApp.Router.navigate("todos.html", {trigger: true});
+    }
+});
+
 
 MyTodoApp.TodoRouter = new (Backbone.Router.extend({
-    routes: {"todos.html":"index", "todos/:id": "showItem"},
+    routes: {
+        "todos.html":"index",
+        "todos/:id": "showItem",
+        "addTodoItem": "addTodoItem",
+    },
 
     index: function(){
         console.log("[Router] Index")
-        MyTodoApp.views.MainView.todoviewcollection.$el.empty();
-        MyTodoApp.views.MainView.todoviewcollection.render();
+        MyTodoApp.views.MainView.mainContainer.$el.html(MyTodoApp.views.MainView.todoviewcollection.render());
     },
     showItem: function(id){
         console.log("[Router] show one item");
         var model = MyTodoApp.views.MainView.todoitemcollection.get(id);
         var todoview = new MyTodoApp.views.TodoView({model: model});
-        MyTodoApp.views.MainView.todoviewcollection.$el.html(todoview.render());
+        MyTodoApp.views.MainView.mainContainer.$el.html(todoview.render());
+    },
+    addTodoItem: function(){
+        //render new empty form
+        console.log("[addTodoItem] Inside route Handler")
+        var newForm = new MyTodoApp.views.NewTodoForm({model: {description: "What do you have in mind ?"}});
+        MyTodoApp.views.MainView.mainContainer.$el.html(newForm.render());
     }
 }));
+
+MyTodoApp.views.MainAppContainer = Backbone.View.extend({
+    tagName: "div",
+    id: "app",
+
+    render: function(){
+        return this.el;
+    }
+});
 
 MyTodoApp.views.MainView = new (Backbone.View.extend({
     el: document.body,
 
-    template: _.template('<h1> My Todo List </h1>'),
+    template: _.template('<h1> My Todo List </h1> <br><br><br> <a href="addTodoItem" id="addTodoItem" class="addtodo" >Add Item</a> <br> '),
 
     render: function(){
         console.log("[Main View] Rendering");
         this.$el.html(this.template());
         console.log("[Main View] html is: ", this.el);
+    },
+
+    events: {
+        'click a': "addNewItem"
+    },
+
+    addNewItem: function(event){
+        event.preventDefault();
+        console.log("[addNewItem Handler] triggering route");
+        MyTodoApp.TodoRouter.navigate(event.target.id, {trigger:true});
     },
 
     start: function(){
@@ -143,7 +193,8 @@ MyTodoApp.views.MainView = new (Backbone.View.extend({
         ];*/
         this.todoitemcollection = new MyTodoApp.collections.TodoItemCollection();
         this.todoviewcollection = new MyTodoApp.views.TodoViewCollection({collection: this.todoitemcollection});
-        this.$el.append(this.todoviewcollection.render());
+        this.mainContainer = new MyTodoApp.views.MainAppContainer({});
+        this.$el.append(this.mainContainer.render());
         console.log("[Main View] At start attached html is :", this.todoviewcollection.el);
         this.todoitemcollection.fetch();
         Backbone.history.start({pushState:true});
