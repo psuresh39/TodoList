@@ -72,7 +72,7 @@ MyTodoApp.views.TodoView = Backbone.View.extend({
         this.model.on('destroy', this.remove, this);
     },
 
-    template: _.template('<h3 class="<%= status %>"><input type=checkbox ' + '<% if(status === "complete") print("checked") %>/>' + ' <%= description %></h3><a href="todos/<%= id %>" id="todos/<%= id %>" class="todo" >more</a> '),
+    template: _.template('<h3 class="<%= status %>"><input type=checkbox ' + '<% if(status === "complete") print("checked") %>/>' + ' <%= description %></h3><a href="todos/<%= id %>" id="todos/<%= id %>" class="todo" >more</a> &nbsp&nbsp <a href="editItem/<%= id %>" id="editItem/<%= id %>" class="edittodo" >edit</a> '),
 
 
 
@@ -86,12 +86,19 @@ MyTodoApp.views.TodoView = Backbone.View.extend({
 
     events:{
         'click h3': 'toggleStatus',
-        'click .todo': 'showMore'
+        'click .todo': 'showMore',
+        'click .edittodo': 'editTodo'
     },
 
     showMore: function(event){
         event.preventDefault();
         console.log("[ItemView] Event :show more of item" , event);
+        MyTodoApp.TodoRouter.navigate(event.target.id, {trigger: true})
+    },
+
+    editTodo: function(event){
+        event.preventDefault();
+        console.log("[EditTodo] Event : edit item" , event);
         MyTodoApp.TodoRouter.navigate(event.target.id, {trigger: true})
     },
 
@@ -124,8 +131,15 @@ MyTodoApp.views.NewTodoForm = Backbone.View.extend({
         e.preventDefault();
         console.log("[Save] saving model and trigger todos.html")
         var desc = this.$('input[name=description]').val();
-        var todoitem = new MyTodoApp.models.TodoItem({description:desc, status:"incomplete"})
-        MyTodoApp.views.MainView.todoitemcollection.add(todoitem);
+        if (this.model.has('id')){
+            console.log("[Save] Existing model, just save")
+            this.model.set('description', desc);
+        }
+        else {
+            console.log("[Save] New model, add to collection")
+            var todoitem = new MyTodoApp.models.TodoItem({description:desc, status:"incomplete"})
+            MyTodoApp.views.MainView.todoitemcollection.add(todoitem);
+        }
         MyTodoApp.TodoRouter.navigate("todos.html", {trigger: true});
     }
 });
@@ -136,6 +150,7 @@ MyTodoApp.TodoRouter = new (Backbone.Router.extend({
         "todos.html":"index",
         "todos/:id": "showItem",
         "addTodoItem": "addTodoItem",
+        "editItem/:id": "editItem"
     },
 
     index: function(){
@@ -153,6 +168,12 @@ MyTodoApp.TodoRouter = new (Backbone.Router.extend({
         console.log("[addTodoItem] Inside route Handler")
         var todoitem = new MyTodoApp.models.TodoItem({description: "What do you have in mind ?"})
         var newForm = new MyTodoApp.views.NewTodoForm({model: todoitem});
+        MyTodoApp.views.MainView.mainContainer.$el.html(newForm.render());
+    },
+    editItem: function(id){
+        console.log("[EditItem] edit one item");
+        var model = MyTodoApp.views.MainView.todoitemcollection.get(id);
+        var newForm = new MyTodoApp.views.NewTodoForm({model: model});
         MyTodoApp.views.MainView.mainContainer.$el.html(newForm.render());
     }
 }));
