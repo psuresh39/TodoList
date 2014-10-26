@@ -5,48 +5,70 @@ MyTodoApp = {
 };
 
 MyTodoApp.models.TodoItem = Backbone.Model.extend({
-    defaults: {status: 'incomplete', description: 'Empty task'},
     toggleStatus: function(){
+        console.log("[Model] toggleStatus")
         if (this.get('status') === 'incomplete'){
             this.set('status', 'complete');
         }
         else{
             this.set('status', 'incomplete');
         }
+        console.log("[Model] ToggledStatus is: ", this.get())
     }
 });
 
 MyTodoApp.collections.TodoItemCollection = Backbone.Collection.extend({
     model:MyTodoApp.models.TodoItem,
+    localStorage: new Backbone.LocalStorage("TodoListItems"),
     initialize: function(){
+        console.log("[Collection] initialize")
         this.on('remove', this.hide);
+        this.on('add', this.saveList);
     },
     hide: function(model){
+        console.log("[Collection] deleting model")
         model.destroy();
+    },
+    saveList: function(model){
+        console.log("[Collection] deleting model")
+        model.save();
     }
 });
 
 MyTodoApp.views.TodoViewCollection = Backbone.View.extend({
-    el: $('#app'),
+    tagName: "div",
+    id: "app",
+
     initialize: function() {
+        console.log("[ViewColl] initialize", this.el);
         this.collection.on('add', this.addOne, this);
-        this.collection.on('reset', this.render, this);
+        this.collection.on('reset', this.addAll, this);
     },
     addOne: function(todoitem){
+        console.log("[ViewColl] Inside addOne, adding: ", todoitem.toJSON())
         var todoview = new MyTodoApp.views.TodoView({model: todoitem});
         this.$el.append(todoview.render());
-        console.log(this.el);
+        console.log("[ViewColl] Inside addOne, collection html is: ", this.el)
+        return this.el
+    },
+
+    addAll: function(){
+        console.log("[ViewColl] addAll", this.el)
+        this.collection.forEach(this.addOne, this)
+        console.log("[ViewColl] addAll collection html is: ", this.el)
+        return this.el
     },
 
     render: function(){
-        console.log("inside collection view");
-        this.collection.forEach(this.addOne, this)
+        this.addAll();
+        return this.el;
     }
 });
 
 MyTodoApp.views.TodoView = Backbone.View.extend({
     tagName: "li",
     initialize: function(){
+        console.log("[ItemView] initialize")
         this.model.on('change', this.render, this);
         this.model.on('destroy', this.remove, this);
     },
@@ -56,10 +78,10 @@ MyTodoApp.views.TodoView = Backbone.View.extend({
 
 
     render: function(){
-        console.log("inside model view");
-        console.log(this.model.toJSON());
+        console.log("[ItemView] render");
+        console.log("[ItemView] Item is: ", this.model.toJSON());
         this.$el.html(this.template(this.model.toJSON()));
-        console.log(this.el);
+        console.log("[ItemView] item html is: ", this.el);
         return this.el;
     },
 
@@ -70,16 +92,17 @@ MyTodoApp.views.TodoView = Backbone.View.extend({
 
     showMore: function(event){
         event.preventDefault();
-        console.log(event);
-        console.log("show more on this item")
+        console.log("[ItemView] Event :show more of item" , event);
         MyTodoApp.TodoRouter.navigate(event.target.id, {trigger: true})
     },
 
     remove:function(){
-      this.$el.remove();
+        console.log("[ItemView] Event: Remove item");
+        this.$el.remove();
     },
 
     toggleStatus: function(){
+        console.log("[ItemView] Event: Toggle status");
         this.model.toggleStatus();
     }
 });
@@ -89,11 +112,11 @@ MyTodoApp.TodoRouter = new (Backbone.Router.extend({
     routes: {"":"index", "todos/:id": "showItem"},
 
     index: function(){
-        console.log("In index;")
-        MyTodoApp.views.MainView.todoitemcollection.reset(MyTodoApp.views.MainView.test);
+        console.log("[Router] Index")
+        MyTodoApp.views.MainView.todoitemcollection.fetch();
     },
     showItem: function(id){
-        console.log("In showItem");
+        console.log("[Router] show one item");
         var model = MyTodoApp.views.MainView.todoitemcollection.get(id);
         var todoview = new MyTodoApp.views.TodoView({model: model});
         MyTodoApp.views.MainView.todoviewcollection.$el.html(todoview.render());
@@ -103,23 +126,25 @@ MyTodoApp.TodoRouter = new (Backbone.Router.extend({
 MyTodoApp.views.MainView = new (Backbone.View.extend({
     el: document.body,
 
-    template: _.template('<h4> My Todo List </h4><div id="app"></div>'),
+    template: _.template('<h1> My Todo List </h1>'),
 
     render: function(){
-        console.log("inside MAIN view");
+        console.log("[Main View] Rendering");
         this.$el.html(this.template());
-        console.log(this.el);
+        console.log("[Main View] html is: ", this.el);
     },
 
-    initialize: function(){
-        this.todoitemcollection = new MyTodoApp.collections.TodoItemCollection({});
-        this.todoviewcollection = new MyTodoApp.views.TodoViewCollection({collection: this.todoitemcollection});
-        this.test = [
-            {description:"clean bedroom", status:"incomplete", id:1},
-            {description:"reply to sis", status:"incomplete", id:2}
-        ];
-    },
     start: function(){
+        console.log("[Main View] Starting. Initial app html is: ", this.el)
+        /*this.test = [
+            {description:"clean bedroom", status:"incomplete"},
+            {description:"reply to sis", status:"incomplete"}
+        ];*/
+        this.todoitemcollection = new MyTodoApp.collections.TodoItemCollection();
+        this.todoviewcollection = new MyTodoApp.views.TodoViewCollection({collection: this.todoitemcollection});
+        this.$el.append(this.todoviewcollection.render());
+        console.log("[Main View] At start attached html is :", this.todoviewcollection.el);
+        this.todoitemcollection.fetch();
         Backbone.history.start({pushState:true});
     }
 }));
