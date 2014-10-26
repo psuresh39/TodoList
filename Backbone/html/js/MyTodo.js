@@ -72,7 +72,7 @@ MyTodoApp.views.TodoView = Backbone.View.extend({
         this.model.on('destroy', this.remove, this);
     },
 
-    template: _.template('<h3 class="<%= status %>"><input type=checkbox ' + '<% if(status === "complete") print("checked") %>/>' + ' <%= description %></h3><a href="todos/<%= id %>" id="todos/<%= id %>" class="todo" >more</a> &nbsp&nbsp <a href="editItem/<%= id %>" id="editItem/<%= id %>" class="edittodo" >edit</a> '),
+    template: _.template('<h3 class="<%= status %>"><input type=checkbox ' + '<% if(status === "complete") print("checked") %>/>' + ' <%= description %></h3><a href="todos/<%= id %>" id="todos/<%= id %>" class="todo" >more</a> &nbsp&nbsp <a href="editItem/<%= id %>" id="editItem/<%= id %>" class="edittodo" >edit</a>&nbsp&nbsp<a href="deleteItem/<%= id %>" id="<%= id %>" class="deletetodo" >delete</a> '),
 
 
 
@@ -87,7 +87,8 @@ MyTodoApp.views.TodoView = Backbone.View.extend({
     events:{
         'click h3': 'toggleStatus',
         'click .todo': 'showMore',
-        'click .edittodo': 'editTodo'
+        'click .edittodo': 'editTodo',
+        'click .deletetodo': 'deleteTodo'
     },
 
     showMore: function(event){
@@ -100,6 +101,13 @@ MyTodoApp.views.TodoView = Backbone.View.extend({
         event.preventDefault();
         console.log("[EditTodo] Event : edit item" , event);
         MyTodoApp.TodoRouter.navigate(event.target.id, {trigger: true})
+    },
+
+    deleteTodo: function(event){
+        event.preventDefault();
+        console.log("[DeleteTodo] Event : delete item" , event);
+        var model = MyTodoApp.views.MainView.todoitemcollection.get(event.target.id);
+        MyTodoApp.views.MainView.todoitemcollection.remove(model);
     },
 
     remove:function(){
