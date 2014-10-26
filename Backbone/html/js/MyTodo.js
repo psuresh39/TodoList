@@ -19,7 +19,7 @@ MyTodoApp.models.TodoItem = Backbone.Model.extend({
 
 MyTodoApp.collections.TodoItemCollection = Backbone.Collection.extend({
     model:MyTodoApp.models.TodoItem,
-    localStorage: new Backbone.LocalStorage("TodoListItems"),
+    localStorage: new Backbone.LocalStorage("TodosList"),
     initialize: function(){
         console.log("[Collection] initialize")
         this.on('remove', this.hide);
@@ -113,6 +113,7 @@ MyTodoApp.TodoRouter = new (Backbone.Router.extend({
 
     index: function(){
         console.log("[Router] Index")
+        MyTodoApp.views.MainView.todoviewcollection.$el.empty();
         MyTodoApp.views.MainView.todoviewcollection.render();
     },
     showItem: function(id){
@@ -144,6 +145,7 @@ MyTodoApp.views.MainView = new (Backbone.View.extend({
         this.todoviewcollection = new MyTodoApp.views.TodoViewCollection({collection: this.todoitemcollection});
         this.$el.append(this.todoviewcollection.render());
         console.log("[Main View] At start attached html is :", this.todoviewcollection.el);
+        this.todoitemcollection.fetch();
         Backbone.history.start({pushState:true});
     }
 }));
