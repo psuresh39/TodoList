@@ -3,6 +3,11 @@ import tornado.web
 import tornado.httpserver
 import tornado.ioloop
 
+class MainHandler(tornado.web.RequestHandler):
+    def get(self):
+        with open("html/todos.html") as f:
+            self.write(f.read())
+
 if __name__ == "__main__":
     bindport = 4545
     bindhost = "0.0.0.0"
@@ -14,7 +19,8 @@ if __name__ == "__main__":
         bindhost, bindport = args.http.split(":")
 
     application = tornado.web.Application([
-        (r"/backbone/(.+)", tornado.web.StaticFileHandler, {'path': "html"}),
+        (r"/", MainHandler),
+        (r"/(.+)", tornado.web.StaticFileHandler, {'path': "html"}),
     ])
 
     http_server = tornado.httpserver.HTTPServer(application)
