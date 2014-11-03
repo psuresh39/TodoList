@@ -19,7 +19,7 @@ MyTodoApp.models.TodoItem = Backbone.Model.extend({
 
 MyTodoApp.collections.TodoItemCollection = Backbone.Collection.extend({
     model:MyTodoApp.models.TodoItem,
-    localStorage: new Backbone.LocalStorage("TodosList-test2"),
+    firebase: new Backbone.Firebase("https://somecrawl.firebaseio.com/"),
     initialize: function(){
         console.log("[Collection] initialize")
         this.on('remove', this.hide);
