@@ -17,13 +17,13 @@ MyTodoApp.models.TodoItem = Backbone.Model.extend({
     }
 });
 
-MyTodoApp.collections.TodoItemCollection = Backbone.Collection.extend({
+MyTodoApp.collections.TodoItemCollection = Backbone.Firebase.Collection.extend({
     model:MyTodoApp.models.TodoItem,
-    firebase: new Backbone.Firebase("https://somecrawl.firebaseio.com/"),
+    firebase: new Firebase("https://somecrawl.firebaseio.com"),
     initialize: function(){
         console.log("[Collection] initialize")
-        this.on('remove', this.hide);
-        this.on('add', this.saveList);
+        //this.on('remove', this.hide);
+        //this.on('add', this.saveList);
     },
     hide: function(model){
         console.log("[Collection] deleting model")
@@ -39,8 +39,9 @@ MyTodoApp.views.TodoViewCollection = Backbone.View.extend({
 
     initialize: function() {
         console.log("[ViewColl] initialize", this.el);
-        //this.collection.on('add', this.addOne, this);
-        this.collection.on('reset', this.addAll, this);
+        this.collection.on('add', this.addOne, this);
+        this.collection.on('reset', this.render, this);
+        this.collection.on('all', this.render, this);
     },
     addOne: function(todoitem){
         console.log("[ViewColl] Inside addOne, adding: ", todoitem.toJSON())
@@ -135,6 +136,14 @@ MyTodoApp.views.NewTodoForm = Backbone.View.extend({
         submit: 'save'
     },
 
+
+    generate_id: function (){
+        function s4() {
+            return Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1);
+        }
+        return s4() + s4() + '-' + s4() + '-' + s4() + '-' + s4() + '-' + s4() + s4() + s4();
+    },
+
     save: function(e){
         e.preventDefault();
         console.log("[Save] saving model and trigger todos.html")
@@ -142,10 +151,11 @@ MyTodoApp.views.NewTodoForm = Backbone.View.extend({
         if (this.model.has('id')){
             console.log("[Save] Existing model, just save")
             this.model.set('description', desc);
+            //this.model.save();
         }
         else {
             console.log("[Save] New model, add to collection")
-            var todoitem = new MyTodoApp.models.TodoItem({description:desc, status:"incomplete"})
+            var todoitem = new MyTodoApp.models.TodoItem({description:desc, status:"incomplete", id:this.generate_id()})
             MyTodoApp.views.MainView.todoitemcollection.add(todoitem);
         }
         MyTodoApp.TodoRouter.navigate("todos.html", {trigger: true});
@@ -223,11 +233,12 @@ MyTodoApp.views.MainView = new (Backbone.View.extend({
             {description:"reply to sis", status:"incomplete"}
         ];*/
         this.todoitemcollection = new MyTodoApp.collections.TodoItemCollection();
+        console.log("[Main View] Collection created");
         this.todoviewcollection = new MyTodoApp.views.TodoViewCollection({collection: this.todoitemcollection});
         this.mainContainer = new MyTodoApp.views.MainAppContainer({});
         this.$el.append(this.mainContainer.render());
         console.log("[Main View] At start attached html is :", this.todoviewcollection.el);
-        this.todoitemcollection.fetch();
+        //setInterval(this.todoitemcollection.fetch.bind(this.todoitemcollection), 10000);
         Backbone.history.start({pushState:true});
     }
 }));
