@@ -19,7 +19,7 @@ MyTodoApp.models.TodoItem = Backbone.Model.extend({
 
 MyTodoApp.collections.TodoItemCollection = Backbone.Firebase.Collection.extend({
     model:MyTodoApp.models.TodoItem,
-    firebase: new Firebase("https://somecrawl.firebaseio.com"),
+    firebase: new Firebase("https://somecrawl.firebaseio.com/questions"),
     initialize: function(){
         console.log("[Collection] initialize")
         //this.on('remove', this.hide);
@@ -73,7 +73,7 @@ MyTodoApp.views.TodoView = Backbone.View.extend({
         this.model.on('destroy', this.remove, this);
     },
 
-    template: _.template('<h3 class="<%= status %>"><input type=checkbox ' + '<% if(status === "complete") print("checked") %>/>' + ' <%= description %></h3><a href="todos/<%= id %>" id="todos/<%= id %>" class="todo" >more</a> &nbsp&nbsp <a href="editItem/<%= id %>" id="editItem/<%= id %>" class="edittodo" >edit</a>&nbsp&nbsp<a href="deleteItem/<%= id %>" id="<%= id %>" class="deletetodo" >delete</a> '),
+    template: _.template('<h3 class="<%= status %>"> <%= description %></h3><a href="todos/<%= id %>" id="todos/<%= id %>" class="todo" >more</a> &nbsp&nbsp <a href="editItem/<%= id %>" id="editItem/<%= id %>" class="edittodo" >edit</a>&nbsp&nbsp<a href="deleteItem/<%= id %>" id="<%= id %>" class="deletetodo" >delete</a> '),
 
 
 
@@ -85,11 +85,30 @@ MyTodoApp.views.TodoView = Backbone.View.extend({
         return this.el;
     },
 
+    render_with_answers: function(){
+        this.$el.empty();
+        this.render();
+        this.$el.prepend('<a href="addAnswerItem/"'+this.model.id+ ' id="addAnswerItem/"'+this.model.id+ ' class="answer" >Add Answer</a> <br>');
+        //Add existing answers
+        console.log("HEREEEEEEE");
+        var answerList = new MyTodoApp.collections.TodoItemCollection({firebase: new Firebase("https://somecrawl.firebaseio.com/answers/"+this.model.id)});
+        console.log("Also HEREEEEEEEE!!!!");
+        this.$el.append(answerList.render());
+        return this.el;
+    },
+
     events:{
         'click h3': 'toggleStatus',
         'click .todo': 'showMore',
         'click .edittodo': 'editTodo',
-        'click .deletetodo': 'deleteTodo'
+        'click .deletetodo': 'deleteTodo',
+        'click .answer': 'addAnswer'
+    },
+
+    addAnswer: function(event){
+        event.preventDefault();
+        console.log("[ItemView] Event :show more of item" , event);
+        MyTodoApp.TodoRouter.navigate(event.target.id, {trigger: true})
     },
 
     showMore: function(event){
@@ -124,7 +143,9 @@ MyTodoApp.views.TodoView = Backbone.View.extend({
 
 MyTodoApp.views.NewTodoForm = Backbone.View.extend({
 
-    template: _.template('<form>' + '<input name=description value="<%= description %>" />' + '<button>Save</button></form>'),
+    template: _.template('<form>' + '<input name=description value="<%= description %>" />' + '<button class="question">Save</button></form>'),
+
+    answer_template: _.template('<form>' + '<input name=description value="<%= description %>" />' + '<button class="answer">Save</button></form>'),
 
     render: function(){
         console.log("[FormView] Rendering form");
@@ -132,8 +153,14 @@ MyTodoApp.views.NewTodoForm = Backbone.View.extend({
         return this.el;
     },
 
+    render_answer: function(id){
+        this.question_id = id;
+        this.render();
+    },
+
     events: {
-        submit: 'save'
+        'click .question': 'save',
+        'click .answer': 'save_answer'
     },
 
 
@@ -155,10 +182,28 @@ MyTodoApp.views.NewTodoForm = Backbone.View.extend({
         }
         else {
             console.log("[Save] New model, add to collection")
-            var todoitem = new MyTodoApp.models.TodoItem({description:desc, status:"incomplete", id:this.generate_id()})
+            var todoitem = new MyTodoApp.models.TodoItem({description:desc, id:this.generate_id()})
             MyTodoApp.views.MainView.todoitemcollection.add(todoitem);
         }
         MyTodoApp.TodoRouter.navigate("todos.html", {trigger: true});
+    },
+
+    save_answer: function(e){
+        e.preventDefault();
+        console.log("[Save] saving model and trigger todos.html")
+        var desc = this.$('input[name=description]').val();
+        if (this.model.has('id')){
+            console.log("[Save] Existing model, just save")
+            this.model.set('description', desc);
+            //this.model.save();
+        }
+        else {
+            console.log("[Save] New model, add to collection")
+            var todoitem = new MyTodoApp.models.TodoItem({description:desc, id:this.generate_id()})
+            var itemCollection = new MyTodoApp.collections.TodoItemCollection({firebase: new Firebase("https://somecrawl.firebaseio.com/answers/"+this.question_id)});
+            itemCollection.add(todoitem);
+        }
+        MyTodoApp.TodoRouter.navigate("todos/"+this.question_id, {trigger: true});
     }
 });
 
@@ -168,18 +213,20 @@ MyTodoApp.TodoRouter = new (Backbone.Router.extend({
         "todos.html":"index",
         "todos/:id": "showItem",
         "addTodoItem": "addTodoItem",
-        "editItem/:id": "editItem"
+        "editItem/:id": "editItem",
+        "addAnswerItem/:id": "addAnswer"
     },
 
     index: function(){
         console.log("[Router] Index")
         MyTodoApp.views.MainView.mainContainer.$el.html(MyTodoApp.views.MainView.todoviewcollection.render());
+        MyTodoApp.views.MainView.mainContainer.$el.prepend('<a href="addTodoItem" id="addTodoItem" class="addtodo" >Add Question</a> <br>');
     },
     showItem: function(id){
         console.log("[Router] show one item");
         var model = MyTodoApp.views.MainView.todoitemcollection.get(id);
         var todoview = new MyTodoApp.views.TodoView({model: model});
-        MyTodoApp.views.MainView.mainContainer.$el.html(todoview.render());
+        MyTodoApp.views.MainView.mainContainer.$el.html(todoview.render_with_answers());
     },
     addTodoItem: function(){
         //render new empty form
@@ -187,12 +234,21 @@ MyTodoApp.TodoRouter = new (Backbone.Router.extend({
         var todoitem = new MyTodoApp.models.TodoItem({description: "What do you have in mind ?"})
         var newForm = new MyTodoApp.views.NewTodoForm({model: todoitem});
         MyTodoApp.views.MainView.mainContainer.$el.html(newForm.render());
+        MyTodoApp.views.MainView.mainContainer.$el.prepend('Add Question <br>');
     },
+
+    addAnswer: function(id){
+        var todoitem = new MyTodoApp.models.TodoItem({description: "the answer is..."})
+        var newForm = new MyTodoApp.views.NewTodoForm({model: todoitem});
+        MyTodoApp.views.MainView.mainContainer.$el.html(newForm.render_answer(id));
+    },
+
     editItem: function(id){
         console.log("[EditItem] edit one item");
         var model = MyTodoApp.views.MainView.todoitemcollection.get(id);
         var newForm = new MyTodoApp.views.NewTodoForm({model: model});
         MyTodoApp.views.MainView.mainContainer.$el.html(newForm.render());
+        MyTodoApp.views.MainView.mainContainer.$el.prepend('Edit Question <br>');
     }
 }));
 
@@ -208,7 +264,7 @@ MyTodoApp.views.MainAppContainer = Backbone.View.extend({
 MyTodoApp.views.MainView = new (Backbone.View.extend({
     el: document.body,
 
-    template: _.template('<h1> My Todo List </h1> <br><br><br> <a href="addTodoItem" id="addTodoItem" class="addtodo" >Add Item</a> <br> '),
+    template: _.template('<h1> Your Q&A Feed </h1> <br><br><br> '),
 
     render: function(){
         console.log("[Main View] Rendering");
@@ -217,12 +273,19 @@ MyTodoApp.views.MainView = new (Backbone.View.extend({
     },
 
     events: {
-        'click a': "addNewItem"
+        'click a': "addNewItem",
+        'click .answer': "addNewAnswer"
     },
 
     addNewItem: function(event){
         event.preventDefault();
         console.log("[addNewItem Handler] triggering route");
+        MyTodoApp.TodoRouter.navigate(event.target.id, {trigger:true});
+    },
+
+    addNewAnswer: function(event){
+        event.preventDefault();
+        console.log("[addNewAnswer Handler] triggering route");
         MyTodoApp.TodoRouter.navigate(event.target.id, {trigger:true});
     },
 
