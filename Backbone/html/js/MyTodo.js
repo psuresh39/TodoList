@@ -1,161 +1,147 @@
-MyTodoApp = {
+MyQuestionAnswerApp = {
     models: {},
     views: {},
     collections: {}
 };
 
-MyTodoApp.models.TodoItem = Backbone.Model.extend({
-    toggleStatus: function(){
-        console.log("[Model] toggleStatus")
-        if (this.get('status') === 'incomplete'){
-            this.set('status', 'complete');
-        }
-        else{
-            this.set('status', 'incomplete');
-        }
-        console.log("[Model] ToggledStatus is: ", this.get())
+MyQuestionAnswerApp.models.Post = Backbone.Model.extend({
+    defaults: {
+        commentCount: 0,
+        viewCount: 0,
+        answerCount: 0,
+        voteCount: 0,
+        body: "",
+        title: "",
     }
 });
 
-MyTodoApp.collections.TodoItemCollection = Backbone.Firebase.Collection.extend({
-    model:MyTodoApp.models.TodoItem,
+MyQuestionAnswerApp.collections.PostCollection = Backbone.Firebase.Collection.extend({
+    model:MyQuestionAnswerApp.models.Post,
     firebase: new Firebase("https://somecrawl.firebaseio.com/questions"),
-    initialize: function(){
-        console.log("[Collection] initialize")
-        //this.on('remove', this.hide);
-        //this.on('add', this.saveList);
-    },
-    hide: function(model){
-        console.log("[Collection] deleting model")
-        model.destroy();
-    },
-    saveList: function(model){
-        console.log("[Collection] Adding model")
-        model.save();
-    }
 });
 
-MyTodoApp.views.TodoViewCollection = Backbone.View.extend({
+MyQuestionAnswerApp.views.PostCollectionView = Backbone.View.extend({
 
     initialize: function() {
-        console.log("[ViewColl] initialize", this.el);
+        console.log("[PostCollectionView] initialize");
         this.collection.on('add', this.addOne, this);
         this.collection.on('reset', this.render, this);
         this.collection.on('all', this.render, this);
     },
-    addOne: function(todoitem){
-        console.log("[ViewColl] Inside addOne, adding: ", todoitem.toJSON())
-        var todoview = new MyTodoApp.views.TodoView({model: todoitem});
-        this.$el.append(todoview.render());
-        console.log("[ViewColl] Inside addOne, collection html is: ", this.el)
-        return this.el
+    addOne: function(postitem){
+        console.log("[PostCollectionView] Inside addOne, adding: ", postitem.toJSON());
+        var postview = new MyQuestionAnswerApp.views.PostView({model: postitem});
+        this.$el.append(postview.render());
+        console.log("[PostCollectionView] Inside addOne, collection html is: ", this.el);
+        return this.el;
     },
 
     addAll: function(){
-        console.log("[ViewColl] addAll", this.el)
-        this.collection.forEach(this.addOne, this)
-        console.log("[ViewColl] addAll collection html is: ", this.el)
-        return this.el
+        console.log("[PostCollectionView] addAll", this.el);
+        this.collection.forEach(this.addOne, this);
+        console.log("[PostCollectionView] addAll collection html is: ", this.el);
+        return this.el;
     },
 
     render: function(){
+        console.log("[PostCollectionView] rendering");
         this.$el.empty();
         this.addAll();
         return this.el;
     }
 });
 
-MyTodoApp.views.TodoView = Backbone.View.extend({
+MyQuestionAnswerApp.views.PostView = Backbone.View.extend({
     tagName: "li",
     initialize: function(){
-        console.log("[ItemView] initialize")
+        console.log("[PostView] initialize");
         this.model.on('change', this.render, this);
         this.model.on('destroy', this.remove, this);
     },
 
-    template: _.template('<h3 class="<%= status %>"> <%= description %></h3><a href="todos/<%= id %>" id="todos/<%= id %>" class="todo" >more</a> &nbsp&nbsp <a href="editItem/<%= id %>" id="editItem/<%= id %>" class="edittodo" >edit</a>&nbsp&nbsp<a href="deleteItem/<%= id %>" id="<%= id %>" class="deletetodo" >delete</a> '),
+    template: _.template('<h3> <%= description %></h3><a href="post/<%= id %>" id="post/<%= id %>" class="post" >more</a> &nbsp&nbsp <a href="editpost/<%= id %>" id="editpost/<%= id %>" class="editpost" >edit</a>&nbsp&nbsp<a href="deletepost/<%= id %>" id="<%= id %>" class="deletepost" >delete</a> '),
 
 
 
     render: function(){
-        console.log("[ItemView] render");
-        console.log("[ItemView] Item is: ", this.model.toJSON());
+        console.log("[PostView] render");
+        console.log("[PostView] Post is: ", this.model.toJSON());
         this.$el.html(this.template(this.model.toJSON()));
-        console.log("[ItemView] item html is: ", this.el);
+        console.log("[PostView] Post html is: ", this.el);
         return this.el;
     },
 
     render_with_answers: function(){
+        console.log("[PostView] render_with_answers");
         this.$el.empty();
         this.render();
-        this.$el.prepend('<a href="addAnswerItem/"'+this.model.id+ ' id="addAnswerItem/"'+this.model.id+ ' class="answer" >Add Answer</a> <br>');
-        //Add existing answers
-        console.log("HEREEEEEEE");
-        var answerList = new MyTodoApp.collections.TodoItemCollection({firebase: new Firebase("https://somecrawl.firebaseio.com/answers/"+this.model.id)});
-        console.log("Also HEREEEEEEEE!!!!");
-        this.$el.append(answerList.render());
+        console.log("[PostView] Render Answers for Question id: ", this.model.id);
+        this.$el.prepend('<a href="addAnswer/'+this.model.id+ '" id="addAnswer/'+this.model.id+ '" class="answer" >Add Answer</a> <br>');
+        var answerList = new (Backbone.Firebase.Collection.extend({
+            firebase: new Firebase("https://somecrawl.firebaseio.com/answers/"+this.model.id), 
+            model:MyQuestionAnswerApp.models.Post
+        }));
+        var answerListView = new MyQuestionAnswerApp.views.PostCollectionView({collection: answerList});
+        this.$el.append(answerListView.render());
         return this.el;
     },
 
     events:{
-        'click h3': 'toggleStatus',
-        'click .todo': 'showMore',
-        'click .edittodo': 'editTodo',
-        'click .deletetodo': 'deleteTodo',
+        'click .post': 'showPost',
+        'click .editpost': 'editPost',
+        'click .deletepost': 'deletePost',
         'click .answer': 'addAnswer'
     },
 
     addAnswer: function(event){
         event.preventDefault();
-        console.log("[ItemView] Event :show more of item" , event);
-        MyTodoApp.TodoRouter.navigate(event.target.id, {trigger: true})
+        console.log("[PostView addAnswer] Click Event :show more of item" , event);
+        MyQuestionAnswerApp.QuestionAnswerAppRouter.navigate(event.target.id, {trigger: true});
     },
 
-    showMore: function(event){
+    showPost: function(event){
         event.preventDefault();
-        console.log("[ItemView] Event :show more of item" , event);
-        MyTodoApp.TodoRouter.navigate(event.target.id, {trigger: true})
+        console.log("[PostView showPost] Click Event :show more of item" , event);
+        MyQuestionAnswerApp.QuestionAnswerAppRouter.navigate(event.target.id, {trigger: true});
     },
 
-    editTodo: function(event){
+    editPost: function(event){
         event.preventDefault();
-        console.log("[EditTodo] Event : edit item" , event);
-        MyTodoApp.TodoRouter.navigate(event.target.id, {trigger: true})
+        console.log("[PostView EditPost] Click Event : edit item" , event);
+        MyQuestionAnswerApp.QuestionAnswerAppRouter.navigate(event.target.id, {trigger: true});
     },
 
-    deleteTodo: function(event){
+    deletePost: function(event){
         event.preventDefault();
-        console.log("[DeleteTodo] Event : delete item" , event);
-        var model = MyTodoApp.views.MainView.todoitemcollection.get(event.target.id);
-        MyTodoApp.views.MainView.todoitemcollection.remove(model);
+        console.log("[PostView DeletePost] Click Event : delete item" , event);
+        var model = MyQuestionAnswerApp.views.MainView.QuestionsCollection.get(event.target.id);
+        MyQuestionAnswerApp.views.MainView.QuestionsCollection.remove(model);
     },
 
     remove:function(){
-        console.log("[ItemView] Event: Remove item");
+        console.log("[PostView remove] Event: Remove item");
         this.$el.remove();
     },
 
-    toggleStatus: function(){
-        console.log("[ItemView] Event: Toggle status");
-        this.model.toggleStatus();
-    }
 });
 
-MyTodoApp.views.NewTodoForm = Backbone.View.extend({
+MyQuestionAnswerApp.views.PostEditForm = Backbone.View.extend({
 
     template: _.template('<form>' + '<input name=description value="<%= description %>" />' + '<button class="question">Save</button></form>'),
 
     answer_template: _.template('<form>' + '<input name=description value="<%= description %>" />' + '<button class="answer">Save</button></form>'),
 
     render: function(){
-        console.log("[FormView] Rendering form");
+        console.log("[PostEditForm] Rendering form");
         this.$el.html(this.template(this.model.attributes));
         return this.el;
     },
 
     render_answer: function(id){
+        console.log("[PostEditForm] inside render_answer");
         this.question_id = id;
-        this.render();
+        this.$el.html(this.answer_template(this.model.attributes));
+        return this.el;
     },
 
     events: {
@@ -173,86 +159,88 @@ MyTodoApp.views.NewTodoForm = Backbone.View.extend({
 
     save: function(e){
         e.preventDefault();
-        console.log("[Save] saving model and trigger todos.html")
+        console.log("[Save Click handler] saving model and trigger Q&Afeed.html")
         var desc = this.$('input[name=description]').val();
         if (this.model.has('id')){
-            console.log("[Save] Existing model, just save")
+            console.log("[Save Click handler] Existing model, just save")
             this.model.set('description', desc);
             //this.model.save();
         }
         else {
-            console.log("[Save] New model, add to collection")
-            var todoitem = new MyTodoApp.models.TodoItem({description:desc, id:this.generate_id()})
-            MyTodoApp.views.MainView.todoitemcollection.add(todoitem);
+            console.log("[Save Click Handler] New model, add to collection");
+            var question = new MyQuestionAnswerApp.models.Post({description:desc, id:this.generate_id()});
+            MyQuestionAnswerApp.views.MainView.QuestionsCollection.add(question);
         }
-        MyTodoApp.TodoRouter.navigate("todos.html", {trigger: true});
+        MyQuestionAnswerApp.QuestionAnswerAppRouter.navigate("Q&Afeed.html", {trigger: true});
     },
 
     save_answer: function(e){
         e.preventDefault();
-        console.log("[Save] saving model and trigger todos.html")
+        console.log("[Save ANS Click handler] saving model and trigger questions details page");
         var desc = this.$('input[name=description]').val();
         if (this.model.has('id')){
-            console.log("[Save] Existing model, just save")
+            console.log("[Save ANS Click handler] Existing model, just save");
             this.model.set('description', desc);
-            //this.model.save();
         }
         else {
-            console.log("[Save] New model, add to collection")
-            var todoitem = new MyTodoApp.models.TodoItem({description:desc, id:this.generate_id()})
-            var itemCollection = new MyTodoApp.collections.TodoItemCollection({firebase: new Firebase("https://somecrawl.firebaseio.com/answers/"+this.question_id)});
-            itemCollection.add(todoitem);
+            console.log("[Save ANS Click handler] New model, add to collection", this.question_id);
+            var answer = new MyQuestionAnswerApp.models.Post({description:desc, id:this.generate_id()});
+            var answerCollection = new (Backbone.Firebase.Collection.extend({
+                firebase: new Firebase("https://somecrawl.firebaseio.com/answers/"+this.question_id),
+                model:MyQuestionAnswerApp.models.Post
+            }));
+            answerCollection.add(answer);
         }
-        MyTodoApp.TodoRouter.navigate("todos/"+this.question_id, {trigger: true});
+        MyQuestionAnswerApp.QuestionAnswerAppRouter.navigate("post/"+this.question_id, {trigger: true});
     }
 });
 
 
-MyTodoApp.TodoRouter = new (Backbone.Router.extend({
+MyQuestionAnswerApp.QuestionAnswerAppRouter = new (Backbone.Router.extend({
     routes: {
-        "todos.html":"index",
-        "todos/:id": "showItem",
-        "addTodoItem": "addTodoItem",
-        "editItem/:id": "editItem",
-        "addAnswerItem/:id": "addAnswer"
+        "Q&Afeed.html":"index",
+        "post/:id": "showPost",
+        "addQuestion": "addQuestion",
+        "editpost/:id": "editPost",
+        "addAnswer/:id": "addAnswer"
     },
 
     index: function(){
-        console.log("[Router] Index")
-        MyTodoApp.views.MainView.mainContainer.$el.html(MyTodoApp.views.MainView.todoviewcollection.render());
-        MyTodoApp.views.MainView.mainContainer.$el.prepend('<a href="addTodoItem" id="addTodoItem" class="addtodo" >Add Question</a> <br>');
+        console.log("[Router] Index");
+        MyQuestionAnswerApp.views.MainView.mainContainer.$el.html(MyQuestionAnswerApp.views.MainView.QuestionsView.render());
+        MyQuestionAnswerApp.views.MainView.mainContainer.$el.prepend('<a href="addQuestion" id="addQuestion" class="addquestion" >Add Question</a> <br>');
     },
-    showItem: function(id){
-        console.log("[Router] show one item");
-        var model = MyTodoApp.views.MainView.todoitemcollection.get(id);
-        var todoview = new MyTodoApp.views.TodoView({model: model});
-        MyTodoApp.views.MainView.mainContainer.$el.html(todoview.render_with_answers());
+    showPost: function(id){
+        console.log("[Router] show one post");
+        var model = MyQuestionAnswerApp.views.MainView.QuestionsCollection.get(id);
+        var postview = new MyQuestionAnswerApp.views.PostView({model: model});
+        MyQuestionAnswerApp.views.MainView.mainContainer.$el.html(postview.render_with_answers());
     },
-    addTodoItem: function(){
-        //render new empty form
-        console.log("[addTodoItem] Inside route Handler")
-        var todoitem = new MyTodoApp.models.TodoItem({description: "What do you have in mind ?"})
-        var newForm = new MyTodoApp.views.NewTodoForm({model: todoitem});
-        MyTodoApp.views.MainView.mainContainer.$el.html(newForm.render());
-        MyTodoApp.views.MainView.mainContainer.$el.prepend('Add Question <br>');
+    addQuestion: function(){
+        console.log("[Router] addQuestion");
+        var question = new MyQuestionAnswerApp.models.Post({description: "What do you have in mind ?"});
+        var questionEditForm = new MyQuestionAnswerApp.views.PostEditForm({model: question});
+        MyQuestionAnswerApp.views.MainView.mainContainer.$el.html(questionEditForm.render());
+        MyQuestionAnswerApp.views.MainView.mainContainer.$el.prepend('Add Question <br>');
     },
 
     addAnswer: function(id){
-        var todoitem = new MyTodoApp.models.TodoItem({description: "the answer is..."})
-        var newForm = new MyTodoApp.views.NewTodoForm({model: todoitem});
-        MyTodoApp.views.MainView.mainContainer.$el.html(newForm.render_answer(id));
+        console.log("[Router] addAnswer");
+        var answer = new MyQuestionAnswerApp.models.Post({description: "the answer is..."});
+        var answerEditForm = new MyQuestionAnswerApp.views.PostEditForm({model: answer});
+        MyQuestionAnswerApp.views.MainView.mainContainer.$el.html(answerEditForm.render_answer(id));
     },
 
-    editItem: function(id){
-        console.log("[EditItem] edit one item");
-        var model = MyTodoApp.views.MainView.todoitemcollection.get(id);
-        var newForm = new MyTodoApp.views.NewTodoForm({model: model});
-        MyTodoApp.views.MainView.mainContainer.$el.html(newForm.render());
-        MyTodoApp.views.MainView.mainContainer.$el.prepend('Edit Question <br>');
+    editPost: function(id){
+        console.log("[Router] edit one post");
+        var model = MyQuestionAnswerApp.views.MainView.QuestionsCollection.get(id);
+        var editForm = new MyQuestionAnswerApp.views.PostEditForm({model: model});
+        MyQuestionAnswerApp.views.MainView.mainContainer.$el.html(editForm.render());
+        MyQuestionAnswerApp.views.MainView.mainContainer.$el.prepend('Edit Question <br>');
     }
 }));
 
-MyTodoApp.views.MainAppContainer = Backbone.View.extend({
+MyQuestionAnswerApp.views.MainAppContainer = Backbone.View.extend({
     tagName: "div",
     id: "app",
 
@@ -261,7 +249,7 @@ MyTodoApp.views.MainAppContainer = Backbone.View.extend({
     }
 });
 
-MyTodoApp.views.MainView = new (Backbone.View.extend({
+MyQuestionAnswerApp.views.MainView = new (Backbone.View.extend({
     el: document.body,
 
     template: _.template('<h1> Your Q&A Feed </h1> <br><br><br> '),
@@ -273,40 +261,35 @@ MyTodoApp.views.MainView = new (Backbone.View.extend({
     },
 
     events: {
-        'click a': "addNewItem",
+        'click .addquestion': "addNewQuestion",
         'click .answer': "addNewAnswer"
     },
 
-    addNewItem: function(event){
+    addNewQuestion: function(event){
         event.preventDefault();
-        console.log("[addNewItem Handler] triggering route");
-        MyTodoApp.TodoRouter.navigate(event.target.id, {trigger:true});
+        console.log("[addNewQuestion Click Handler] triggering route");
+        MyQuestionAnswerApp.QuestionAnswerAppRouter.navigate(event.target.id, {trigger:true});
     },
 
     addNewAnswer: function(event){
         event.preventDefault();
-        console.log("[addNewAnswer Handler] triggering route");
-        MyTodoApp.TodoRouter.navigate(event.target.id, {trigger:true});
+        console.log("[addNewAnswer Click Handler] triggering route");
+        MyQuestionAnswerApp.QuestionAnswerAppRouter.navigate(event.target.id, {trigger:true});
     },
 
     start: function(){
         console.log("[Main View] Starting. Initial app html is: ", this.el)
-        /*this.test = [
-            {description:"clean bedroom", status:"incomplete"},
-            {description:"reply to sis", status:"incomplete"}
-        ];*/
-        this.todoitemcollection = new MyTodoApp.collections.TodoItemCollection();
+        this.QuestionsCollection = new MyQuestionAnswerApp.collections.PostCollection();
         console.log("[Main View] Collection created");
-        this.todoviewcollection = new MyTodoApp.views.TodoViewCollection({collection: this.todoitemcollection});
-        this.mainContainer = new MyTodoApp.views.MainAppContainer({});
+        this.QuestionsView = new MyQuestionAnswerApp.views.PostCollectionView({collection: this.QuestionsCollection});
+        this.mainContainer = new MyQuestionAnswerApp.views.MainAppContainer({});
         this.$el.append(this.mainContainer.render());
-        console.log("[Main View] At start attached html is :", this.todoviewcollection.el);
-        //setInterval(this.todoitemcollection.fetch.bind(this.todoitemcollection), 10000);
+        console.log("[Main View] At start attached html is :", this.QuestionsView.el);
         Backbone.history.start({pushState:true});
     }
 }));
 
 $(function(){
-    MyTodoApp.views.MainView.render();
-    MyTodoApp.views.MainView.start();
+    MyQuestionAnswerApp.views.MainView.render();
+    MyQuestionAnswerApp.views.MainView.start();
 });
