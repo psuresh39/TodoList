@@ -10,7 +10,7 @@ MyQuestionAnswerApp.models.Post = Backbone.Model.extend({
         viewCount: 0,
         answerCount: 0,
         voteCount: 0,
-        body: "",
+       	description: "",
         title: "",
     }
 });
@@ -24,9 +24,9 @@ MyQuestionAnswerApp.views.PostCollectionView = Backbone.View.extend({
 
     initialize: function() {
         console.log("[PostCollectionView] initialize");
-        this.collection.on('add', this.addOne, this);
-        this.collection.on('reset', this.render, this);
-        this.collection.on('all', this.render, this);
+        this.listenTo(this.collection, 'add', this.addOne);
+        this.listenTo(this.collection, 'reset', this.render);
+        this.listenTo(this.collection, 'all', this.render);
     },
     addOne: function(postitem){
         console.log("[PostCollectionView] Inside addOne, adding: ", postitem.toJSON());
@@ -55,11 +55,11 @@ MyQuestionAnswerApp.views.PostView = Backbone.View.extend({
     tagName: "li",
     initialize: function(){
         console.log("[PostView] initialize");
-        this.model.on('change', this.render, this);
-        this.model.on('destroy', this.remove, this);
+        //this.listenTo(this.model, 'change', this.render);
+        //this.listenTo(this.model, 'destroy', this.remove);
     },
 
-    template: _.template('<h3> <%= description %></h3><a href="post/<%= id %>" id="post/<%= id %>" class="post" >more</a> &nbsp&nbsp <a href="editpost/<%= id %>" id="editpost/<%= id %>" class="editpost" >edit</a>&nbsp&nbsp<a href="deletepost/<%= id %>" id="<%= id %>" class="deletepost" >delete</a> '),
+    template: _.template('<% if(type === 0) { %><h3> <%= description %></h3><a href="question/<%= id %>" id="question/<%= id %>" class="showquestion" >more</a> &nbsp&nbsp <a href="editquestion/<%= id %>" id="editquestion/<%= id %>" class="editquestion" >edit</a>&nbsp&nbsp<a href="deletequestion/<%= id %>" id="<%= id %>" class="deletequestion" >delete</a><% } else { %> <h4> <%= description %></h4><a href="editanswer/<%= parent_id %>-<%= id %>" id="editanswer/<%= parent_id %>-<%= id  %>" class="editanswer" >edit</a>&nbsp&nbsp<a href="deleteanswer/<%=parent_id %>-<%= id %>" id="<%= parent_id %>-<%= id %>>" class="deleteanswer" >delete</a><% } %>'),
 
 
 
@@ -67,6 +67,7 @@ MyQuestionAnswerApp.views.PostView = Backbone.View.extend({
         console.log("[PostView] render");
         console.log("[PostView] Post is: ", this.model.toJSON());
         this.$el.html(this.template(this.model.toJSON()));
+        this.$el.prepend('<a href="addQuestion" id="addQuestion" class="addquestion" >Add Question</a> <br>');
         console.log("[PostView] Post html is: ", this.el);
         return this.el;
     },
@@ -76,7 +77,7 @@ MyQuestionAnswerApp.views.PostView = Backbone.View.extend({
         this.$el.empty();
         this.render();
         console.log("[PostView] Render Answers for Question id: ", this.model.id);
-        this.$el.prepend('<a href="addAnswer/'+this.model.id+ '" id="addAnswer/'+this.model.id+ '" class="answer" >Add Answer</a> <br>');
+        this.$el.prepend('<a href="addAnswer/'+this.model.id+ '" id="addAnswer/'+this.model.id+ '" class="addanswer" >Add Answer</a> <br>');
         var answerList = new (Backbone.Firebase.Collection.extend({
             firebase: new Firebase("https://somecrawl.firebaseio.com/answers/"+this.model.id), 
             model:MyQuestionAnswerApp.models.Post
@@ -87,33 +88,48 @@ MyQuestionAnswerApp.views.PostView = Backbone.View.extend({
     },
 
     events:{
-        'click .post': 'showPost',
-        'click .editpost': 'editPost',
-        'click .deletepost': 'deletePost',
-        'click .answer': 'addAnswer'
+        'click .showquestion': 'showQuestion',
+        'click .editquestion': 'editQuestion',
+        'click .deletequestion': 'deleteQuestion',
+        'click .addanswer': 'addAnswer',
+        'click .editanswer': 'editAnswer',
+        'click .deleteanswer': 'deleteAnswer',
+        'click .addquestion': 'addNewQuestion',
+    },
+
+    addNewQuestion: function(event){
+        event.preventDefault();
+        console.log("[addNewQuestion Click Handler] triggering route", event);
+        MyQuestionAnswerApp.QuestionAnswerAppRouter.navigate(event.target.id, {trigger:true});
     },
 
     addAnswer: function(event){
         event.preventDefault();
-        console.log("[PostView addAnswer] Click Event :show more of item" , event);
+        console.log("[PostView addAnswer] Click Event :" , event);
         MyQuestionAnswerApp.QuestionAnswerAppRouter.navigate(event.target.id, {trigger: true});
     },
 
-    showPost: function(event){
+    editAnswer: function(event){
         event.preventDefault();
-        console.log("[PostView showPost] Click Event :show more of item" , event);
+        console.log("[PostView editAnswer] Click Event :" , event);
         MyQuestionAnswerApp.QuestionAnswerAppRouter.navigate(event.target.id, {trigger: true});
     },
 
-    editPost: function(event){
+    showQuestion: function(event){
         event.preventDefault();
-        console.log("[PostView EditPost] Click Event : edit item" , event);
+        console.log("[PostView showPost] Click Event :" , event);
         MyQuestionAnswerApp.QuestionAnswerAppRouter.navigate(event.target.id, {trigger: true});
     },
 
-    deletePost: function(event){
+    editQuestion: function(event){
         event.preventDefault();
-        console.log("[PostView DeletePost] Click Event : delete item" , event);
+        console.log("[PostView EditPost] Click Event :" , event);
+        MyQuestionAnswerApp.QuestionAnswerAppRouter.navigate(event.target.id, {trigger: true});
+    },
+
+    deleteQuestion: function(event){
+        event.preventDefault();
+        console.log("[PostView DeletePost] Click Event :" , event);
         var model = MyQuestionAnswerApp.views.MainView.QuestionsCollection.get(event.target.id);
         MyQuestionAnswerApp.views.MainView.QuestionsCollection.remove(model);
     },
@@ -127,13 +143,14 @@ MyQuestionAnswerApp.views.PostView = Backbone.View.extend({
 
 MyQuestionAnswerApp.views.PostEditForm = Backbone.View.extend({
 
-    template: _.template('<form>' + '<input name=description value="<%= description %>" />' + '<button class="question">Save</button></form>'),
+    question_template: _.template('<form>' + '<input name=description value="<%= description %>" />' + '<button class="editquestion">Save</button></form>'),
 
-    answer_template: _.template('<form>' + '<input name=description value="<%= description %>" />' + '<button class="answer">Save</button></form>'),
+    answer_template: _.template('<form>' + '<input name=description value="<%= description %>" />' + '<button class="editanswer">Save</button></form>'),
 
-    render: function(){
+    render_question: function(){
         console.log("[PostEditForm] Rendering form");
-        this.$el.html(this.template(this.model.attributes));
+        this.$el.html(this.question_template(this.model.attributes));
+        this.$el.prepend('Add or Edit Question <br>');
         return this.el;
     },
 
@@ -141,12 +158,13 @@ MyQuestionAnswerApp.views.PostEditForm = Backbone.View.extend({
         console.log("[PostEditForm] inside render_answer");
         this.question_id = id;
         this.$el.html(this.answer_template(this.model.attributes));
+        this.$el.prepend('Add or Edit Answer <br>');
         return this.el;
     },
 
     events: {
-        'click .question': 'save',
-        'click .answer': 'save_answer'
+        'click .editquestion': 'save_question',
+        'click .editanswer': 'save_answer'
     },
 
 
@@ -154,21 +172,20 @@ MyQuestionAnswerApp.views.PostEditForm = Backbone.View.extend({
         function s4() {
             return Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1);
         }
-        return s4() + s4() + '-' + s4() + '-' + s4() + '-' + s4() + '-' + s4() + s4() + s4();
+        return s4() + s4() + '' + s4() + '' + s4() + '' + s4() + '' + s4() + s4() + s4();
     },
 
-    save: function(e){
+    save_question: function(e){
         e.preventDefault();
         console.log("[Save Click handler] saving model and trigger Q&Afeed.html")
         var desc = this.$('input[name=description]').val();
         if (this.model.has('id')){
             console.log("[Save Click handler] Existing model, just save")
             this.model.set('description', desc);
-            //this.model.save();
         }
         else {
             console.log("[Save Click Handler] New model, add to collection");
-            var question = new MyQuestionAnswerApp.models.Post({description:desc, id:this.generate_id()});
+            var question = new MyQuestionAnswerApp.models.Post({description:desc, id:this.generate_id(), type: 0});
             MyQuestionAnswerApp.views.MainView.QuestionsCollection.add(question);
         }
         MyQuestionAnswerApp.QuestionAnswerAppRouter.navigate("Q&Afeed.html", {trigger: true});
@@ -179,19 +196,21 @@ MyQuestionAnswerApp.views.PostEditForm = Backbone.View.extend({
         console.log("[Save ANS Click handler] saving model and trigger questions details page");
         var desc = this.$('input[name=description]').val();
         if (this.model.has('id')){
-            console.log("[Save ANS Click handler] Existing model, just save");
+            console.log("[Save ANS Click handler] Existing model, just save", this.model);
+            var answer_dummy_view = new MyQuestionAnswerApp.views.PostView({model: this.model});
             this.model.set('description', desc);
+            MyQuestionAnswerApp.QuestionAnswerAppRouter.navigate("question/"+this.model.attributes.parent_id, {trigger: true});
         }
         else {
             console.log("[Save ANS Click handler] New model, add to collection", this.question_id);
-            var answer = new MyQuestionAnswerApp.models.Post({description:desc, id:this.generate_id()});
+            var answer = new MyQuestionAnswerApp.models.Post({description:desc, id:this.generate_id(), parent_id:this.question_id, type: 1});
             var answerCollection = new (Backbone.Firebase.Collection.extend({
                 firebase: new Firebase("https://somecrawl.firebaseio.com/answers/"+this.question_id),
                 model:MyQuestionAnswerApp.models.Post
-            }));
+            }));	
             answerCollection.add(answer);
+            MyQuestionAnswerApp.QuestionAnswerAppRouter.navigate("question/"+this.question_id, {trigger: true});
         }
-        MyQuestionAnswerApp.QuestionAnswerAppRouter.navigate("post/"+this.question_id, {trigger: true});
     }
 });
 
@@ -199,29 +218,29 @@ MyQuestionAnswerApp.views.PostEditForm = Backbone.View.extend({
 MyQuestionAnswerApp.QuestionAnswerAppRouter = new (Backbone.Router.extend({
     routes: {
         "Q&Afeed.html":"index",
-        "post/:id": "showPost",
+        "question/:id": "showQuestion",
         "addQuestion": "addQuestion",
-        "editpost/:id": "editPost",
-        "addAnswer/:id": "addAnswer"
+        "editquestion/:id": "editQuestion",
+        "addAnswer/:id": "addAnswer",
+        "editanswer/:parent_id-:id": "editAnswer",
     },
 
     index: function(){
         console.log("[Router] Index");
         MyQuestionAnswerApp.views.MainView.mainContainer.$el.html(MyQuestionAnswerApp.views.MainView.QuestionsView.render());
-        MyQuestionAnswerApp.views.MainView.mainContainer.$el.prepend('<a href="addQuestion" id="addQuestion" class="addquestion" >Add Question</a> <br>');
     },
-    showPost: function(id){
-        console.log("[Router] show one post");
+    showQuestion: function(id){
+        console.log("[Router] show one question");
         var model = MyQuestionAnswerApp.views.MainView.QuestionsCollection.get(id);
         var postview = new MyQuestionAnswerApp.views.PostView({model: model});
         MyQuestionAnswerApp.views.MainView.mainContainer.$el.html(postview.render_with_answers());
     },
+ 
     addQuestion: function(){
         console.log("[Router] addQuestion");
         var question = new MyQuestionAnswerApp.models.Post({description: "What do you have in mind ?"});
         var questionEditForm = new MyQuestionAnswerApp.views.PostEditForm({model: question});
-        MyQuestionAnswerApp.views.MainView.mainContainer.$el.html(questionEditForm.render());
-        MyQuestionAnswerApp.views.MainView.mainContainer.$el.prepend('Add Question <br>');
+        MyQuestionAnswerApp.views.MainView.mainContainer.$el.html(questionEditForm.render_question());
     },
 
     addAnswer: function(id){
@@ -231,12 +250,22 @@ MyQuestionAnswerApp.QuestionAnswerAppRouter = new (Backbone.Router.extend({
         MyQuestionAnswerApp.views.MainView.mainContainer.$el.html(answerEditForm.render_answer(id));
     },
 
-    editPost: function(id){
-        console.log("[Router] edit one post");
+    editAnswer: function(parent_id, id){
+        console.log("[Router] edit one answer");
+        var answer_collection = new (Backbone.Firebase.Collection.extend({
+            firebase: "https://somecrawl.firebaseio.com/answers/" + parent_id,
+            model: MyQuestionAnswerApp.models.Post
+        }));
+        var model = answer_collection.get(id);
+        var editForm = new MyQuestionAnswerApp.views.PostEditForm({model: model});
+        MyQuestionAnswerApp.views.MainView.mainContainer.$el.html(editForm.render_answer());
+    },
+
+    editQuestion: function(id){
+        console.log("[Router] edit one question");
         var model = MyQuestionAnswerApp.views.MainView.QuestionsCollection.get(id);
         var editForm = new MyQuestionAnswerApp.views.PostEditForm({model: model});
-        MyQuestionAnswerApp.views.MainView.mainContainer.$el.html(editForm.render());
-        MyQuestionAnswerApp.views.MainView.mainContainer.$el.prepend('Edit Question <br>');
+        MyQuestionAnswerApp.views.MainView.mainContainer.$el.html(editForm.render_question());
     }
 }));
 
@@ -258,23 +287,6 @@ MyQuestionAnswerApp.views.MainView = new (Backbone.View.extend({
         console.log("[Main View] Rendering");
         this.$el.html(this.template());
         console.log("[Main View] html is: ", this.el);
-    },
-
-    events: {
-        'click .addquestion': "addNewQuestion",
-        'click .answer': "addNewAnswer"
-    },
-
-    addNewQuestion: function(event){
-        event.preventDefault();
-        console.log("[addNewQuestion Click Handler] triggering route");
-        MyQuestionAnswerApp.QuestionAnswerAppRouter.navigate(event.target.id, {trigger:true});
-    },
-
-    addNewAnswer: function(event){
-        event.preventDefault();
-        console.log("[addNewAnswer Click Handler] triggering route");
-        MyQuestionAnswerApp.QuestionAnswerAppRouter.navigate(event.target.id, {trigger:true});
     },
 
     start: function(){
