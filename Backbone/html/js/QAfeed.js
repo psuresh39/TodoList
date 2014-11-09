@@ -43,11 +43,13 @@ MyQuestionAnswerApp.views.PostCollectionView = Backbone.View.extend({
         return this.el;
     },
 
-    render: function(){
+    render: function(addQLink){
         console.log("[PostCollectionView] rendering");
         this.$el.empty();
         this.addAll();
-        this.$el.prepend('<a href="addQuestion" id="addQuestion" class="addquestion" >Add Question</a> <br>');
+        if (addQLink===true) {
+            this.$el.prepend('<a href="addQuestion" id="addQuestion" class="addquestion" >Add Question</a> <br>');
+        }
         return this.el;
     },
 
@@ -91,7 +93,7 @@ MyQuestionAnswerApp.views.PostView = Backbone.View.extend({
             model:MyQuestionAnswerApp.models.Post
         }));
         var answerListView = new MyQuestionAnswerApp.views.PostCollectionView({collection: answerList});
-        this.$el.append(answerListView.render());
+        this.$el.append(answerListView.render(false));
         return this.el;
     },
 
