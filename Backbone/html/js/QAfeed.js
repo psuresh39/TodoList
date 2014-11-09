@@ -43,24 +43,11 @@ MyQuestionAnswerApp.views.PostCollectionView = Backbone.View.extend({
         return this.el;
     },
 
-    render: function(addQuestionLink){
+    render: function(){
         console.log("[PostCollectionView] rendering");
         this.$el.empty();
         this.addAll();
-        if (typeof(addQuestionLink)==="undefined" || addQuestionLink === true) {
-            this.$el.prepend('<a href="addQuestion" id="addQuestion" class="addquestion" >Add Question</a> <br>');
-        }
         return this.el;
-    },
-
-    events:{
-        'click .addquestion': 'addNewQuestion',
-    },
-
-    addNewQuestion: function(event){
-        event.preventDefault();
-        console.log("[addNewQuestion Click Handler] triggering route", event);
-        MyQuestionAnswerApp.QuestionAnswerAppRouter.navigate(event.target.id, {trigger:true});
     }
 });
 
@@ -93,7 +80,7 @@ MyQuestionAnswerApp.views.PostView = Backbone.View.extend({
             model:MyQuestionAnswerApp.models.Post
         }));
         var answerListView = new MyQuestionAnswerApp.views.PostCollectionView({collection: answerList});
-        this.$el.append(answerListView.render(false));
+        this.$el.append(answerListView.render());
         return this.el;
     },
 
@@ -237,6 +224,7 @@ MyQuestionAnswerApp.QuestionAnswerAppRouter = new (Backbone.Router.extend({
         var model = MyQuestionAnswerApp.views.MainView.QuestionsCollection.get(id);
         var postview = new MyQuestionAnswerApp.views.PostView({model: model});
         MyQuestionAnswerApp.views.MainView.mainContainer.$el.html(postview.render_with_answers());
+        MyQuestionAnswerApp.views.MainView.mainContainer.$el.prepend('<a href="addQuestion" id="addQuestion" class="addquestion" >Add Question</a> <br>');
     },
  
     addQuestion: function(){
@@ -277,6 +265,16 @@ MyQuestionAnswerApp.views.MainAppContainer = Backbone.View.extend({
 
     render: function(){
         return this.el;
+    },
+
+    events:{
+        'click .addquestion': 'addNewQuestion'
+    },
+
+    addNewQuestion: function(event){
+        event.preventDefault();
+        console.log("[addNewQuestion Click Handler] triggering route", event);
+        MyQuestionAnswerApp.QuestionAnswerAppRouter.navigate(event.target.id, {trigger:true});
     }
 });
 
