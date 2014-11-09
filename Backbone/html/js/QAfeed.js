@@ -218,13 +218,13 @@ MyQuestionAnswerApp.QuestionAnswerAppRouter = new (Backbone.Router.extend({
     index: function(){
         console.log("[Router] Index");
         MyQuestionAnswerApp.views.MainView.mainContainer.$el.html(MyQuestionAnswerApp.views.MainView.QuestionsView.render());
+        MyQuestionAnswerApp.views.MainView.mainContainer.$el.prepend('<a href="addQuestion" id="addQuestion" class="addquestion" >Add Question</a> <br>');
     },
     showQuestion: function(id){
         console.log("[Router] show one question");
         var model = MyQuestionAnswerApp.views.MainView.QuestionsCollection.get(id);
         var postview = new MyQuestionAnswerApp.views.PostView({model: model});
         MyQuestionAnswerApp.views.MainView.mainContainer.$el.html(postview.render_with_answers());
-        MyQuestionAnswerApp.views.MainView.mainContainer.$el.prepend('<a href="addQuestion" id="addQuestion" class="addquestion" >Add Question</a> <br>');
     },
  
     addQuestion: function(){
