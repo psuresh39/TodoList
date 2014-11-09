@@ -43,11 +43,11 @@ MyQuestionAnswerApp.views.PostCollectionView = Backbone.View.extend({
         return this.el;
     },
 
-    render: function(addQLink){
+    render: function(addQuestionLink){
         console.log("[PostCollectionView] rendering");
         this.$el.empty();
         this.addAll();
-        if (addQLink===true) {
+        if (typeof(addQuestionLink)==="undefined" || addQuestionLink === true) {
             this.$el.prepend('<a href="addQuestion" id="addQuestion" class="addquestion" >Add Question</a> <br>');
         }
         return this.el;
