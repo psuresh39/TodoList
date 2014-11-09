@@ -57,7 +57,7 @@ MyQuestionAnswerApp.views.PostView = Backbone.View.extend({
         console.log("[PostView] initialize");
     },
 
-    template: _.template('<% if(type === 0) { %><h3> <%= description %></h3><a href="question/<%= id %>" id="question/<%= id %>" class="showquestion" >more</a> &nbsp&nbsp <a href="editquestion/<%= id %>" id="editquestion/<%= id %>" class="editquestion" >edit</a>&nbsp&nbsp<a href="deletequestion/<%= id %>" id="<%= id %>" class="deletequestion" >delete</a><% } else { %> <h4> <%= description %></h4><a href="editanswer/<%= parent_id %>-<%= id %>" id="editanswer/<%= parent_id %>-<%= id  %>" class="editanswer" >edit</a>&nbsp&nbsp<a href="deleteanswer/<%=parent_id %>-<%= id %>" id="deleteanswer/<%= parent_id %>-<%= id %>>" class="deleteanswer" >delete</a><% } %>'),
+    template: _.template('<% if(type === 0) { %><h3> <%= description %></h3><a href="question/<%= id %>" id="question/<%= id %>" class="showquestion" >more</a> &nbsp&nbsp <a href="editquestion/<%= id %>" id="editquestion/<%= id %>" class="editquestion" >edit</a>&nbsp&nbsp<a href="deletequestion/<%= id %>" id="<%= id %>" class="deletequestion" >delete</a><% } else { %> <h4> <%= description %></h4><a href="editanswer/<%= parent_id %>-<%= id %>" id="editanswer/<%= parent_id %>-<%= id  %>" class="editanswer" >edit</a>&nbsp&nbsp<a href="deleteanswer/<%=parent_id %>-<%= id %>" id="deleteanswer/<%= parent_id %>-<%= id %>" class="deleteanswer" >delete</a><% } %>'),
 
 
 
@@ -270,6 +270,7 @@ MyQuestionAnswerApp.QuestionAnswerAppRouter = new (Backbone.Router.extend({
             firebase: "https://somecrawl.firebaseio.com/answers/" + parent_id + '/' + id,
         }));
         answer.destroy();
+        MyQuestionAnswerApp.QuestionAnswerAppRouter.navigate("question/"+parent_id, {trigger: true});
     }
 }));
 
