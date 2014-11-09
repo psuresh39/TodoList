@@ -57,7 +57,7 @@ MyQuestionAnswerApp.views.PostView = Backbone.View.extend({
         console.log("[PostView] initialize");
     },
 
-    template: _.template('<% if(type === 0) { %><h3> <%= description %></h3><a href="question/<%= id %>" id="question/<%= id %>" class="showquestion" >more</a> &nbsp&nbsp <a href="editquestion/<%= id %>" id="editquestion/<%= id %>" class="editquestion" >edit</a>&nbsp&nbsp<a href="deletequestion/<%= id %>" id="<%= id %>" class="deletequestion" >delete</a><% } else { %> <h4> <%= description %></h4><a href="editanswer/<%= parent_id %>-<%= id %>" id="editanswer/<%= parent_id %>-<%= id  %>" class="editanswer" >edit</a>&nbsp&nbsp<a href="deleteanswer/<%=parent_id %>-<%= id %>" id="<%= parent_id %>-<%= id %>>" class="deleteanswer" >delete</a><% } %>'),
+    template: _.template('<% if(type === 0) { %><h3> <%= description %></h3><a href="question/<%= id %>" id="question/<%= id %>" class="showquestion" >more</a> &nbsp&nbsp <a href="editquestion/<%= id %>" id="editquestion/<%= id %>" class="editquestion" >edit</a>&nbsp&nbsp<a href="deletequestion/<%= id %>" id="<%= id %>" class="deletequestion" >delete</a><% } else { %> <h4> <%= description %></h4><a href="editanswer/<%= parent_id %>-<%= id %>" id="editanswer/<%= parent_id %>-<%= id  %>" class="editanswer" >edit</a>&nbsp&nbsp<a href="deleteanswer/<%=parent_id %>-<%= id %>" id="deleteanswer/<%= parent_id %>-<%= id %>>" class="deleteanswer" >delete</a><% } %>'),
 
 
 
@@ -122,6 +122,12 @@ MyQuestionAnswerApp.views.PostView = Backbone.View.extend({
         console.log("[PostView DeletePost] Click Event :" , event);
         var model = MyQuestionAnswerApp.views.MainView.QuestionsCollection.get(event.target.id);
         MyQuestionAnswerApp.views.MainView.QuestionsCollection.remove(model);
+    },
+
+    deleteAnswer: function(event){
+        event.preventDefault();
+        console.log("[PostView DeletePost] Click Event :" , event);
+        MyQuestionAnswerApp.QuestionAnswerAppRouter.navigate(event.target.id, {trigger: true});
     },
 
     remove:function(){
@@ -213,6 +219,7 @@ MyQuestionAnswerApp.QuestionAnswerAppRouter = new (Backbone.Router.extend({
         "editquestion/:id": "editQuestion",
         "addAnswer/:id": "addAnswer",
         "editanswer/:parent_id-:id": "editAnswer",
+        "deleteanswer/:parent_id-:id":"deleteAnswer"
     },
 
     index: function(){
@@ -246,7 +253,6 @@ MyQuestionAnswerApp.QuestionAnswerAppRouter = new (Backbone.Router.extend({
         var answer = new (Backbone.Firebase.Model.extend({
             firebase: "https://somecrawl.firebaseio.com/answers/" + parent_id + '/' + id,
         }));
-        //var model = answer_collection.get(id);
         var editForm = new MyQuestionAnswerApp.views.PostEditForm({model: answer});
         MyQuestionAnswerApp.views.MainView.mainContainer.$el.html(editForm.render_answer());
     },
@@ -256,6 +262,14 @@ MyQuestionAnswerApp.QuestionAnswerAppRouter = new (Backbone.Router.extend({
         var model = MyQuestionAnswerApp.views.MainView.QuestionsCollection.get(id);
         var editForm = new MyQuestionAnswerApp.views.PostEditForm({model: model});
         MyQuestionAnswerApp.views.MainView.mainContainer.$el.html(editForm.render_question());
+    },
+
+    deleteAnswer: function(parent_id, id){
+        console.log("[Router] delete one answer");
+        var answer = new (Backbone.Firebase.Model.extend({
+            firebase: "https://somecrawl.firebaseio.com/answers/" + parent_id + '/' + id,
+        }));
+        answer.destroy();
     }
 }));
 
