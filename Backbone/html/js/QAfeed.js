@@ -57,7 +57,7 @@ MyQuestionAnswerApp.views.PostView = Backbone.View.extend({
         console.log("[PostView] initialize");
     },
 
-    template: _.template('<% if(type === 0) { %><h3> <%= description %></h3><a href="question/<%= id %>" id="question/<%= id %>" class="showquestion" >more</a> &nbsp&nbsp <a href="editquestion/<%= id %>" id="editquestion/<%= id %>" class="editquestion" >edit</a>&nbsp&nbsp<a href="deletequestion/<%= id %>" id="<%= id %>" class="deletequestion" >delete</a><% } else { %> <h4> <%= description %></h4><a href="editanswer/<%= parent_id %>-<%= id %>" id="editanswer/<%= parent_id %>-<%= id  %>" class="editanswer" >edit</a>&nbsp&nbsp<a href="deleteanswer/<%=parent_id %>-<%= id %>" id="deleteanswer/<%= parent_id %>-<%= id %>" class="deleteanswer" >delete</a><% } %>'),
+    template: _.template('<% if(type === 0) { %><h3> <%= description %></h3><a href="question/<%= id %>" id="question/<%= id %>" class="showquestion" >more</a> &nbsp&nbsp <a href="editquestion/<%= id %>" id="editquestion/<%= id %>" class="editquestion" >edit</a>&nbsp&nbsp<a href="deletequestion/<%= id %>" id="<%= id %>" class="deletequestion" >delete</a>&nbsp&nbsp<a href="upvoteQuestion/<%= id %>" id="<%= id %>" class="upvoteQuestion" >Upvote</a>&nbsp<%=voteCount  } else { %> <h4> <%= description %></h4><a href="editanswer/<%= parent_id %>-<%= id %>" id="editanswer/<%= parent_id %>-<%= id  %>" class="editanswer" >edit</a>&nbsp&nbsp<a href="deleteanswer/<%=parent_id %>-<%= id %>" id="deleteanswer/<%= parent_id %>-<%= id %>" class="deleteanswer" >delete</a>&nbsp&nbsp<a href="upvoteAnswer/<%= id %>" id="<%= parent_id %>/<%= id %>" class="upvoteAnswer" >Upvote</a>&nbsp<%=voteCount } %>'),
 
 
 
@@ -90,7 +90,29 @@ MyQuestionAnswerApp.views.PostView = Backbone.View.extend({
         'click .deletequestion': 'deleteQuestion',
         'click .addanswer': 'addAnswer',
         'click .editanswer': 'editAnswer',
-        'click .deleteanswer': 'deleteAnswer'
+        'click .deleteanswer': 'deleteAnswer',
+        'click .upvoteQuestion': 'upvoteQuestion',
+        'click .upvoteAnswer': 'upvoteAnswer'
+    },
+
+    upvoteQuestion: function(event) {
+        event.preventDefault();
+        console.log("[PostView upvoteQuestion] upvoteQuestion");
+        var question = new (Backbone.Firebase.Model.extend({
+            firebase: "https://somecrawl.firebaseio.com/questions/"+event.target.id,
+        }));
+        console.log(question);
+        this.render();
+    },
+
+    upvoteAnswer: function(event){
+        event.preventDefault();
+        console.log("[PostView upvoteAnswer] upvoteAnswer");
+        var answer = new (Backbone.Firebase.Model.extend({
+            firebase: "https://somecrawl.firebaseio.com/answers/"+event.target.id,
+        }));
+        console.log(answer);
+        this.render();
     },
 
     addAnswer: function(event){
