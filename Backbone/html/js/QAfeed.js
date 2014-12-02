@@ -12,6 +12,7 @@ MyQuestionAnswerApp.models.Post = Backbone.Model.extend({
         voteCount: 0,
        	description: "",
         title: "",
+        lastUpdated: ""
     }
 });
 
@@ -26,7 +27,7 @@ MyQuestionAnswerApp.views.PostCollectionView = Backbone.View.extend({
         console.log("[PostCollectionView] initialize");
         this.listenTo(this.collection, 'add', this.addOne);
         this.listenTo(this.collection, 'reset', this.render);
-        this.listenTo(this.collection, 'all', this.render);
+        this.listenTo(this.collection, 'remove', this.render);
     },
     addOne: function(postitem){
         console.log("[PostCollectionView] Inside addOne, adding: ", postitem.toJSON());
@@ -55,16 +56,19 @@ MyQuestionAnswerApp.views.PostView = Backbone.View.extend({
     tagName: "li",
     initialize: function(){
         console.log("[PostView] initialize");
+        this.listenTo(this.model, 'change', this.render_with_answers);
     },
 
-    template: _.template('<% if(type === 0) { %><h3> <%= description %></h3><a href="question/<%= id %>" id="question/<%= id %>" class="showquestion" >more</a> &nbsp&nbsp <a href="editquestion/<%= id %>" id="editquestion/<%= id %>" class="editquestion" >edit</a>&nbsp&nbsp<a href="deletequestion/<%= id %>" id="<%= id %>" class="deletequestion" >delete</a>&nbsp&nbsp<a href="upvoteQuestion/<%= id %>" id="<%= id %>" class="upvoteQuestion" >Upvote</a>&nbsp<%=voteCount  } else { %> <h4> <%= description %></h4><a href="editanswer/<%= parent_id %>-<%= id %>" id="editanswer/<%= parent_id %>-<%= id  %>" class="editanswer" >edit</a>&nbsp&nbsp<a href="deleteanswer/<%=parent_id %>-<%= id %>" id="deleteanswer/<%= parent_id %>-<%= id %>" class="deleteanswer" >delete</a>&nbsp&nbsp<a href="upvoteAnswer/<%= id %>" id="<%= parent_id %>/<%= id %>" class="upvoteAnswer" >Upvote</a>&nbsp<%=voteCount } %>'),
+    template: _.template('<% if(type === 0) { %><h3> <%= description %></h3><a href="question/<%= id %>" id="question/<%= id %>" class="showquestion" >more</a> &nbsp&nbsp <a href="editquestion/<%= id %>" id="editquestion/<%= id %>" class="editquestion" >edit</a>&nbsp&nbsp<a href="deletequestion/<%= id %>" id="<%= id %>" class="deletequestion" >delete</a>&nbsp&nbsp<a href="upvoteQuestion/<%= id %>" id="<%= id %>" class="upvoteQuestion" >Upvote</a>&nbsp<%=voteCount %>&nbsp&nbspAnswers&nbsp<%= answerCount%>&nbsp&nbsp<%=timeToDisplay %><%  } else { %> <h4> <%= description %></h4><a href="editanswer/<%= parent_id %>-<%= id %>" id="editanswer/<%= parent_id %>-<%= id  %>" class="editanswer" >edit</a>&nbsp&nbsp<a href="deleteanswer/<%=parent_id %>-<%= id %>" id="deleteanswer/<%= parent_id %>-<%= id %>" class="deleteanswer" >delete</a>&nbsp&nbsp<a href="upvoteAnswer/<%= id %>" id="<%= parent_id %>/<%= id %>" class="upvoteAnswer" >Upvote</a>&nbsp<%=voteCount %>&nbsp&nbsp<%=timeToDisplay %><% } %>'),
 
 
 
     render: function(){
         console.log("[PostView] render");
         console.log("[PostView] Post is: ", this.model.toJSON());
-        this.$el.html(this.template(this.model.toJSON()));
+        var model_toJSON = this.model.toJSON()
+        model_toJSON.timeToDisplay = moment(model_toJSON.lastUpdated).fromNow();
+        this.$el.html(this.template(model_toJSON));
         console.log("[PostView] Post html is: ", this.el);
         return this.el;
     },
@@ -73,8 +77,10 @@ MyQuestionAnswerApp.views.PostView = Backbone.View.extend({
         console.log("[PostView] render_with_answers");
         this.$el.empty();
         this.render();
-        console.log("[PostView] Render Answers for Question id: ", this.model.id);
-        this.$el.prepend('<a href="addAnswer/'+this.model.id+ '" id="addAnswer/'+this.model.id+ '" class="addanswer" >Add Answer</a> <br>');
+        console.log("[PostView] Render Answers for", this.model);
+        if (this.model.attributes.type == 0){
+            this.$el.prepend('<a href="addAnswer/'+this.model.id+ '" id="addAnswer/'+this.model.id+ '" class="addanswer" >Add Answer</a> <br>');
+        }
         var answerList = new (Backbone.Firebase.Collection.extend({
             firebase: new Firebase("https://somecrawl.firebaseio.com/answers/"+this.model.id), 
             model:MyQuestionAnswerApp.models.Post
@@ -102,7 +108,8 @@ MyQuestionAnswerApp.views.PostView = Backbone.View.extend({
             firebase: "https://somecrawl.firebaseio.com/questions/"+event.target.id,
         }));
         console.log(question);
-        this.render();
+        question.set('voteCount', question.attributes.voteCount+1)
+        this.render_with_answers();
     },
 
     upvoteAnswer: function(event){
@@ -112,7 +119,8 @@ MyQuestionAnswerApp.views.PostView = Backbone.View.extend({
             firebase: "https://somecrawl.firebaseio.com/answers/"+event.target.id,
         }));
         console.log(answer);
-        this.render();
+        answer.set('voteCount', answer.attributes.voteCount+1)
+        this.render_with_answers();
     },
 
     addAnswer: function(event){
@@ -143,7 +151,9 @@ MyQuestionAnswerApp.views.PostView = Backbone.View.extend({
         event.preventDefault();
         console.log("[PostView DeletePost] Click Event :" , event);
         var model = MyQuestionAnswerApp.views.MainView.QuestionsCollection.get(event.target.id);
+        console.log(model)
         MyQuestionAnswerApp.views.MainView.QuestionsCollection.remove(model);
+        MyQuestionAnswerApp.QuestionAnswerAppRouter.navigate("Q&Afeed.html", {trigger: true});
     },
 
     deleteAnswer: function(event){
@@ -197,13 +207,15 @@ MyQuestionAnswerApp.views.PostEditForm = Backbone.View.extend({
         e.preventDefault();
         console.log("[Save Click handler] saving model and trigger Q&Afeed.html")
         var desc = this.$('input[name=description]').val();
+        var updateDate = new Date().toString();
         if (this.model.has('id')){
             console.log("[Save Click handler] Existing model, just save")
             this.model.set('description', desc);
+	    this.model.set('lastUpdated', updateDate);
         }
         else {
             console.log("[Save Click Handler] New model, add to collection");
-            var question = new MyQuestionAnswerApp.models.Post({description:desc, id:this.generate_id(), type: 0});
+            var question = new MyQuestionAnswerApp.models.Post({description:desc, id:this.generate_id(), type: 0, lastUpdated: updateDate});
             MyQuestionAnswerApp.views.MainView.QuestionsCollection.add(question);
         }
         MyQuestionAnswerApp.QuestionAnswerAppRouter.navigate("Q&Afeed.html", {trigger: true});
@@ -213,20 +225,27 @@ MyQuestionAnswerApp.views.PostEditForm = Backbone.View.extend({
         e.preventDefault();
         console.log("[Save ANS Click handler] saving model and trigger questions details page");
         var desc = this.$('input[name=description]').val();
+        var updateDate = new Date().toString();
         if (this.model.has('id')){
             console.log("[Save ANS Click handler] Existing model, just save", this.model);
             var answer_dummy_view = new MyQuestionAnswerApp.views.PostView({model: this.model});
             this.model.set('description', desc);
+            this.model.set('lastUpdated', updateDate)
             MyQuestionAnswerApp.QuestionAnswerAppRouter.navigate("question/"+this.model.attributes.parent_id, {trigger: true});
         }
         else {
             console.log("[Save ANS Click handler] New model, add to collection", this.question_id);
-            var answer = new MyQuestionAnswerApp.models.Post({description:desc, id:this.generate_id(), parent_id:this.question_id, type: 1});
+            var answer = new MyQuestionAnswerApp.models.Post({description:desc, id:this.generate_id(), parent_id:this.question_id, type: 1, lastUpdated: updateDate});
             var answerCollection = new (Backbone.Firebase.Collection.extend({
                 firebase: new Firebase("https://somecrawl.firebaseio.com/answers/"+this.question_id),
                 model:MyQuestionAnswerApp.models.Post
             }));	
             answerCollection.add(answer);
+            var question = new (Backbone.Firebase.Model.extend({
+                firebase: "https://somecrawl.firebaseio.com/questions/"+this.question_id,
+            }));
+            console.log(question);
+            question.set('answerCount', question.attributes.answerCount+1)
             MyQuestionAnswerApp.QuestionAnswerAppRouter.navigate("question/"+this.question_id, {trigger: true});
         }
     }
@@ -288,10 +307,19 @@ MyQuestionAnswerApp.QuestionAnswerAppRouter = new (Backbone.Router.extend({
 
     deleteAnswer: function(parent_id, id){
         console.log("[Router] delete one answer");
-        var answer = new (Backbone.Firebase.Model.extend({
-            firebase: "https://somecrawl.firebaseio.com/answers/" + parent_id + '/' + id,
+        var answerList = new (Backbone.Firebase.Collection.extend({
+            firebase: "https://somecrawl.firebaseio.com/answers/" + parent_id,
+            model:MyQuestionAnswerApp.models.Post
         }));
-        answer.destroy();
+        var answer = answerList.get(id);
+        console.log(answer)
+        answerList.remove(answer)
+        console.log(parent_id)
+        var question = new (Backbone.Firebase.Model.extend({
+            firebase: "https://somecrawl.firebaseio.com/questions/" + parent_id,
+        }));
+        console.log(question)
+        question.set('answerCount', question.attributes.answerCount-1)
         MyQuestionAnswerApp.QuestionAnswerAppRouter.navigate("question/"+parent_id, {trigger: true});
     }
 }));
