@@ -346,11 +346,11 @@ MyQuestionAnswerApp.views.MainAppContainer = Backbone.View.extend({
 MyQuestionAnswerApp.views.MainView = new (Backbone.View.extend({
     el: document.body,
 
-    template: _.template('<h1> Your Q&A Feed </h1> <br><br><br> '),
+    //template: _.template(""),
 
     render: function(){
         console.log("[Main View] Rendering");
-        this.$el.html(this.template());
+        //this.$el.html(this.template());
         console.log("[Main View] html is: ", this.el);
     },
 
