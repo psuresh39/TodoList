@@ -12,7 +12,8 @@ MyQuestionAnswerApp.models.Post = Backbone.Model.extend({
         voteCount: 0,
        	description: "",
         title: "",
-        lastUpdated: ""
+        lastUpdated: "",
+        profileImage: "http://96.126.103.227/img/1.jpg"
     }
 });
 
@@ -59,7 +60,7 @@ MyQuestionAnswerApp.views.PostView = Backbone.View.extend({
         this.listenTo(this.model, 'change', this.render_with_answers);
     },
 
-    template: _.template('<% if(type === 0) { %><h3> <%= description %></h3><a href="question/<%= id %>" id="question/<%= id %>" class="showquestion" >more</a> &nbsp&nbsp <a href="editquestion/<%= id %>" id="editquestion/<%= id %>" class="editquestion" >edit</a>&nbsp&nbsp<a href="deletequestion/<%= id %>" id="<%= id %>" class="deletequestion" >delete</a>&nbsp&nbsp<a href="upvoteQuestion/<%= id %>" id="<%= id %>" class="upvoteQuestion" >Upvote</a>&nbsp<%=voteCount %>&nbsp&nbspAnswers&nbsp<%= answerCount%>&nbsp&nbsp<%=timeToDisplay %><%  } else { %> <h4> <%= description %></h4><a href="editanswer/<%= parent_id %>-<%= id %>" id="editanswer/<%= parent_id %>-<%= id  %>" class="editanswer" >edit</a>&nbsp&nbsp<a href="deleteanswer/<%=parent_id %>-<%= id %>" id="deleteanswer/<%= parent_id %>-<%= id %>" class="deleteanswer" >delete</a>&nbsp&nbsp<a href="upvoteAnswer/<%= id %>" id="<%= parent_id %>/<%= id %>" class="upvoteAnswer" >Upvote</a>&nbsp<%=voteCount %>&nbsp&nbsp<%=timeToDisplay %><% } %>'),
+    template: _.template('<% if(type === 0) { %><img src="<%=profileImage %>" height="60" width="60"><h3> <%= description %></h3><a href="question/<%= id %>" id="question/<%= id %>" class="showquestion" >more</a> &nbsp&nbsp <a href="editquestion/<%= id %>" id="editquestion/<%= id %>" class="editquestion" >edit</a>&nbsp&nbsp<a href="deletequestion/<%= id %>" id="<%= id %>" class="deletequestion" >delete</a>&nbsp&nbsp<a href="upvoteQuestion/<%= id %>" id="<%= id %>" class="upvoteQuestion" >Upvote</a>&nbsp<%=voteCount %>&nbsp&nbspAnswers&nbsp<%= answerCount%>&nbsp&nbsp<%=timeToDisplay %><%  } else { %> <img src="<%=profileImage %>" height="50" width="50"><h4> <%= description %></h4><a href="editanswer/<%= parent_id %>-<%= id %>" id="editanswer/<%= parent_id %>-<%= id  %>" class="editanswer" >edit</a>&nbsp&nbsp<a href="deleteanswer/<%=parent_id %>-<%= id %>" id="deleteanswer/<%= parent_id %>-<%= id %>" class="deleteanswer" >delete</a>&nbsp&nbsp<a href="upvoteAnswer/<%= id %>" id="<%= parent_id %>/<%= id %>" class="upvoteAnswer" >Upvote</a>&nbsp<%=voteCount %>&nbsp&nbsp<%=timeToDisplay %><% } %>'),
 
 
 
@@ -215,7 +216,7 @@ MyQuestionAnswerApp.views.PostEditForm = Backbone.View.extend({
         }
         else {
             console.log("[Save Click Handler] New model, add to collection");
-            var question = new MyQuestionAnswerApp.models.Post({description:desc, id:this.generate_id(), type: 0, lastUpdated: updateDate});
+            var question = new MyQuestionAnswerApp.models.Post({description:desc, id:this.generate_id(), type: 0, lastUpdated: updateDate, profileImage: "http://96.126.103.227/img/" + Math.floor((Math.random() * 15) + 1) + ".jpg"});
             MyQuestionAnswerApp.views.MainView.QuestionsCollection.add(question);
         }
         MyQuestionAnswerApp.QuestionAnswerAppRouter.navigate("Q&Afeed.html", {trigger: true});
@@ -235,7 +236,7 @@ MyQuestionAnswerApp.views.PostEditForm = Backbone.View.extend({
         }
         else {
             console.log("[Save ANS Click handler] New model, add to collection", this.question_id);
-            var answer = new MyQuestionAnswerApp.models.Post({description:desc, id:this.generate_id(), parent_id:this.question_id, type: 1, lastUpdated: updateDate});
+            var answer = new MyQuestionAnswerApp.models.Post({description:desc, id:this.generate_id(), parent_id:this.question_id, type: 1, lastUpdated: updateDate, profileImage: "http://96.126.103.227/img/" + Math.floor((Math.random() * 15) + 1) + ".jpg"});
             var answerCollection = new (Backbone.Firebase.Collection.extend({
                 firebase: new Firebase("https://somecrawl.firebaseio.com/answers/"+this.question_id),
                 model:MyQuestionAnswerApp.models.Post
@@ -367,6 +368,6 @@ MyQuestionAnswerApp.views.MainView = new (Backbone.View.extend({
 }));
 
 $(function(){
-    MyQuestionAnswerApp.views.MainView.render();
-    MyQuestionAnswerApp.views.MainView.start();
+    //MyQuestionAnswerApp.views.MainView.render();
+    //MyQuestionAnswerApp.views.MainView.start();
 });
