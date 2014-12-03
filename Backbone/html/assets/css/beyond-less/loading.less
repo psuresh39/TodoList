@@ -1,0 +1,54 @@
+﻿/*#region Loading*/
+.loading-container {
+    z-index: 2000;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,.55);
+
+    &.loading-inactive {
+        display: none;
+
+        .loading-progress {
+            display: none;
+        }
+    }
+
+    .loading-progress {
+        z-index: 2000;
+        position: fixed;
+        height: 10px;
+        width: 10px;
+        margin: auto;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+
+        .rotator {
+            .animation(spin 30s infinite linear);
+        }
+
+        > .rotator {
+            left: -100px;
+        }
+    }
+
+    .rotator {
+        .background-origin(border-box);
+        background-color: @white;
+        width: 200px;
+        height: 7px;
+        opacity: .75;
+        position: absolute;
+        top: 0;
+        left: 0;
+    }
+
+    .colored {
+        background-color: @themeprimary !important;
+    }
+}
+/*#endregion Loading*/
