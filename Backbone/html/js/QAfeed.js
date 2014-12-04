@@ -53,6 +53,68 @@ MyQuestionAnswerApp.views.PostCollectionView = Backbone.View.extend({
     }
 });
 
+MyQuestionAnswerApp.views.PostCollectionNavBarView = Backbone.View.extend({
+    el: ".sidebar-menu",
+    initialize: function() {
+        console.log("[PostCollectionNavBarView] initialize");
+        this.listenTo(this.collection, 'add', this.addOne);
+        this.listenTo(this.collection, 'reset', this.render);
+        this.listenTo(this.collection, 'remove', this.render);
+    },
+    addOne: function(postitem){
+        console.log("[PostCollectionNavBarView] Inside addOne, adding: ", postitem.toJSON());
+        var postview = new MyQuestionAnswerApp.views.PostNavBarView({model: postitem});
+        this.$el.append(postview.render());
+        console.log("[PostCollectionNavBarView] Inside addOne, collection html is: ", this.el);
+        return this.el;
+    },
+
+    addAll: function(){
+        console.log("[PostCollectionNavBarView] addAll", this.el);
+        this.collection.forEach(this.addOne, this);
+        console.log("[PostCollectionNavBarView] addAll collection html is: ", this.el);
+        return this.el;
+    },
+
+    render: function(){
+        console.log("[PostCollectionNavBarView] rendering");
+        this.$el.empty();
+        this.addAll();
+        return this.el;
+    }
+});
+
+
+MyQuestionAnswerApp.views.PostNavBarView = Backbone.View.extend({
+    tagName: "li",
+    initialize: function(){
+        console.log("[PostNavBarView] initialize");
+        this.listenTo(this.model, 'change', this.render);
+    },
+
+    template: _.template('<a href="question/<%= id %>" id="question/<%= id %>" class="showquestion" ><i class="menu-icon fa fa-question-circle"></i><span class="menu-text"><img src="<%=profileImage %>" height="40" width="40"/>&nbsp&nbsp<%= description %> <div class="picture-align">Upvote&nbsp<%=voteCount %>&nbsp&nbspAnswers&nbsp<%= answerCount%>&nbsp&nbsp<%=timeToDisplay %></div></span></a>'),
+
+    render: function(){
+        console.log("[PostNavBarView] render");
+        console.log("[PostNavBarView] Post is: ", this.model.toJSON());
+        var model_toJSON = this.model.toJSON()
+        model_toJSON.timeToDisplay = moment(model_toJSON.lastUpdated).fromNow();
+        this.$el.html(this.template(model_toJSON));
+        console.log("[PostNavBarView] Post html is: ", this.el);
+        return this.el;
+    },
+
+    events:{
+        'click .showquestion': 'showQuestion'
+    },
+
+    showQuestion: function(event){
+        event.preventDefault();
+        console.log("[PostNavBarView showPost] Click Event :" , event);
+        MyQuestionAnswerApp.QuestionAnswerAppRouter.navigate(event.target.id, {trigger: true});
+    },
+});
+
 MyQuestionAnswerApp.views.PostView = Backbone.View.extend({
     tagName: "li",
     initialize: function(){
@@ -172,14 +234,15 @@ MyQuestionAnswerApp.views.PostView = Backbone.View.extend({
 
 MyQuestionAnswerApp.views.PostEditForm = Backbone.View.extend({
 
-    question_template: _.template('<form>' + '<input name=description value="<%= description %>" />' + '<button class="editquestion">Save</button></form>'),
+    //question_template: _.template('<form>' + '<input name=description value="<%= description %>" />' + '<button class="editquestion">Save</button></form>'),
+
+    question_template: _.template('<div aria-hidden="false" style="display: block;" class="bootbox modal fade modal-darkorange in" tabindex="-1" role="dialog"><div class="modal-dialog"><div class="modal-content"><div class="modal-header"><button type="button" class="bootbox-close-button close" data-dismiss="modal" aria-hidden="true">×</button><h4 class="modal-title">New Question</h4></div><div class="modal-body"><div class="bootbox-body"><div class="row"><div class="col-md-12"><div class="form-group"><textarea class="form-control" id="addQ"  placeholder="What do you have in mind ?" rows="5" required=""></textarea></div></div></div></div></div><div class="modal-footer"><button data-bb-handler="success" type="button" class="btn btn-blue editquestion">Ask Question</button><button data-bb-handler="Cancel" type="button" class="btn btn-danger">Cancel</button></div></div></div></div><div class="modal-backdrop fade in"></div>'),
 
     answer_template: _.template('<form>' + '<input name=description value="<%= description %>" />' + '<button class="editanswer">Save</button></form>'),
 
     render_question: function(){
         console.log("[PostEditForm] Rendering form");
         this.$el.html(this.question_template(this.model.attributes));
-        this.$el.prepend('Add or Edit Question <br>');
         return this.el;
     },
 
@@ -187,15 +250,21 @@ MyQuestionAnswerApp.views.PostEditForm = Backbone.View.extend({
         console.log("[PostEditForm] inside render_answer");
         this.question_id = id;
         this.$el.html(this.answer_template(this.model.attributes));
-        this.$el.prepend('Add or Edit Answer <br>');
+        //this.$el.prepend('Add or Edit Answer <br>');
         return this.el;
     },
 
     events: {
         'click .editquestion': 'save_question',
-        'click .editanswer': 'save_answer'
+        'click .editanswer': 'save_answer',
+        'click .btn-danger': 'close',
+        'click .bootbox-close-button': 'close',
     },
 
+    close: function(){
+        this.$el.empty();
+        MyQuestionAnswerApp.QuestionAnswerAppRouter.navigate("Q&Afeed.html", {trigger: true});
+    },
 
     generate_id: function (){
         function s4() {
@@ -207,19 +276,26 @@ MyQuestionAnswerApp.views.PostEditForm = Backbone.View.extend({
     save_question: function(e){
         e.preventDefault();
         console.log("[Save Click handler] saving model and trigger Q&Afeed.html")
-        var desc = this.$('input[name=description]').val();
+        //var desc = this.$('input[name=description]').val();
+        var desc = document.getElementById("addQ").value;
+        console.log("[Save Click Handler] description is: ", desc);
         var updateDate = new Date().toString();
+        var id = 0;
         if (this.model.has('id')){
             console.log("[Save Click handler] Existing model, just save")
             this.model.set('description', desc);
 	    this.model.set('lastUpdated', updateDate);
+            id = this.model.attributes.id;
         }
         else {
             console.log("[Save Click Handler] New model, add to collection");
             var question = new MyQuestionAnswerApp.models.Post({description:desc, id:this.generate_id(), type: 0, lastUpdated: updateDate, profileImage: "http://96.126.103.227/img/" + Math.floor((Math.random() * 15) + 1) + ".jpg"});
             MyQuestionAnswerApp.views.MainView.QuestionsCollection.add(question);
+            id = question.attributes.id
         }
         MyQuestionAnswerApp.QuestionAnswerAppRouter.navigate("Q&Afeed.html", {trigger: true});
+        MyQuestionAnswerApp.QuestionAnswerAppRouter.navigate("question/"+id, {trigger: true});
+        Notify('Question Posted', 'top-right', '5000', 'success', 'fa-check', true);
     },
 
     save_answer: function(e){
@@ -266,8 +342,9 @@ MyQuestionAnswerApp.QuestionAnswerAppRouter = new (Backbone.Router.extend({
 
     index: function(){
         console.log("[Router] Index");
-        MyQuestionAnswerApp.views.MainView.mainContainer.$el.html(MyQuestionAnswerApp.views.MainView.QuestionsView.render());
-        MyQuestionAnswerApp.views.MainView.mainContainer.$el.prepend('<a href="addQuestion" id="addQuestion" class="addquestion" >Add Question</a> <br>');
+        //MyQuestionAnswerApp.views.MainView.mainContainer.$el.html(MyQuestionAnswerApp.views.MainView.QuestionsView.render());
+        MyQuestionAnswerApp.views.MainView.QuestionsView.render();
+        //MyQuestionAnswerApp.views.MainView.mainContainer.$el.prepend('<a href="addQuestion" id="addQuestion" class="addquestion" >Add Question</a> <br>');
     },
     showQuestion: function(id){
         console.log("[Router] show one question");
@@ -278,7 +355,7 @@ MyQuestionAnswerApp.QuestionAnswerAppRouter = new (Backbone.Router.extend({
  
     addQuestion: function(){
         console.log("[Router] addQuestion");
-        var question = new MyQuestionAnswerApp.models.Post({description: "What do you have in mind ?"});
+        var question = new MyQuestionAnswerApp.models.Post({});
         var questionEditForm = new MyQuestionAnswerApp.views.PostEditForm({model: question});
         MyQuestionAnswerApp.views.MainView.mainContainer.$el.html(questionEditForm.render_question());
     },
@@ -326,20 +403,41 @@ MyQuestionAnswerApp.QuestionAnswerAppRouter = new (Backbone.Router.extend({
 }));
 
 MyQuestionAnswerApp.views.MainAppContainer = Backbone.View.extend({
+    el: ".page-content",
     tagName: "div",
-    id: "app",
 
     render: function(){
         return this.el;
     },
 
+    //events:{
+    //    'click .addquestion': 'addNewQuestion'
+    //},
+
+    //addNewQuestion: function(event){
+    //    event.preventDefault();
+    //    console.log("[addNewQuestion Click Handler] triggering route", event);
+    //    MyQuestionAnswerApp.QuestionAnswerAppRouter.navigate(event.target.id, {trigger:true});
+    //}
+});
+
+MyQuestionAnswerApp.views.AccountAreaView = Backbone.View.extend({
+    el: ".profile",
+    initialize: function(){
+        console.log("[AccountAreaView] initialize");
+        console.log(this.$el);
+    },
+    template: _.template('<a class="btn btn-default purple addquestion" id="addQuestion"><i class="fa fa-plus"></i> Add Question</a>'),
+    render: function(){
+        this.$el.html(this.template());
+    },
     events:{
-        'click .addquestion': 'addNewQuestion'
+        'click a': 'addNewQuestion'
     },
 
     addNewQuestion: function(event){
         event.preventDefault();
-        console.log("[addNewQuestion Click Handler] triggering route", event);
+        console.log("[AccountArea addNewQuestion Click Handler] triggering route", event);
         MyQuestionAnswerApp.QuestionAnswerAppRouter.navigate(event.target.id, {trigger:true});
     }
 });
@@ -359,8 +457,10 @@ MyQuestionAnswerApp.views.MainView = new (Backbone.View.extend({
         console.log("[Main View] Starting. Initial app html is: ", this.el)
         this.QuestionsCollection = new MyQuestionAnswerApp.collections.PostCollection();
         console.log("[Main View] Collection created");
-        this.QuestionsView = new MyQuestionAnswerApp.views.PostCollectionView({collection: this.QuestionsCollection});
+        this.QuestionsView = new MyQuestionAnswerApp.views.PostCollectionNavBarView({collection: this.QuestionsCollection});
         this.mainContainer = new MyQuestionAnswerApp.views.MainAppContainer({});
+        this.addQuestionContainer = new MyQuestionAnswerApp.views.AccountAreaView({});
+        this.addQuestionContainer.render();
         this.$el.append(this.mainContainer.render());
         console.log("[Main View] At start attached html is :", this.QuestionsView.el);
         Backbone.history.start({pushState:true});
@@ -368,6 +468,6 @@ MyQuestionAnswerApp.views.MainView = new (Backbone.View.extend({
 }));
 
 $(function(){
-    //MyQuestionAnswerApp.views.MainView.render();
-    //MyQuestionAnswerApp.views.MainView.start();
+    MyQuestionAnswerApp.views.MainView.render();
+    MyQuestionAnswerApp.views.MainView.start();
 });

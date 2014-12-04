@@ -2,3 +2,18 @@
     color: '#bbb';
     text-decoration: line-through
 }
+
+.empty-content-text {
+    font-size: 16px;
+    margin-left: auto;
+    margin-right: auto;
+    top: 350px;
+    width: 70%;
+    text-shadow: none !important;
+    color: #737373;
+}
+
+.picture-align {
+    position: absolute;
+    left: 20px;
+}

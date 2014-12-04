@@ -27,6 +27,7 @@
     <link href="assets/css/demo.min.css" rel="stylesheet" />
     <link href="assets/css/typicons.min.css" rel="stylesheet" />
     <link href="assets/css/animate.min.css" rel="stylesheet" />
+    <link href="css/qafeed.css" rel="stylesheet" />
     <link id="skin-link" href="" rel="stylesheet" type="text/css" />
 
     <!--Skin Script: Place this script in head to load scripts for skins and rtl support-->
@@ -63,6 +64,9 @@
                 <!-- Account Area and Settings --->
                 <div class="navbar-header pull-right">
                     <div class="navbar-account">
+                        <ul class="account-area">
+                            <span class="profile"></span>
+                        </ul>
                     </div>
                 </div>
                 <!-- /Account Area and Settings -->
@@ -80,27 +84,6 @@
                 <!-- /Page Sidebar Header -->
                 <!-- Sidebar Menu -->
                 <ul class="nav sidebar-menu">
-                    <!--Dashboard-->
-                    <li class="active">
-                        <a href="index.html">
-                            <i class="menu-icon fa fa-question-circle"></i>
-                            <span class="menu-text"> Dashboard Daashboard Dashboard Dashboard Dashboardmenu-icon </span>
-                        </a>
-                    </li>
-                    <!--Databoxes-->
-                    <li>
-                        <a href="databoxes.html">
-                            <i class="menu-icon fa fa-question-circle"></i>
-                            <span class="menu-text"> Data Boxes </span>
-                        </a>
-                    </li>
-                    <!--Widgets-->
-                    <li>
-                        <a href="widgets.html">
-                            <i class="menu-icon fa fa-question-circle"></i>
-                            <span class="menu-text"> Widgets </span>
-                        </a>
-                    </li>
                 </ul>
                 <!-- /Sidebar Menu -->
             </div>
@@ -109,13 +92,14 @@
             <div class="page-content">
                 <!-- Page Body -->
                 <div class="page-body">
+                    <div class="empty-content-text">Click on any question to View here</div>
                 </div>
+
             </div>
             <!-- /Page Content -->
         </div>
         <!-- /Page Container -->
         <!-- Main Container -->
-
     </div>
 
     <!--Basic Scripts-->
@@ -125,7 +109,7 @@
 
     <!--Beyond Scripts-->
     <script src="assets/js/beyond.js"></script>
-
+    <script src="assets/js/toastr/toastr.js"></script>
 
     <!--Page Related Scripts-->
     <!--Sparkline Charts Needed Scripts-->
